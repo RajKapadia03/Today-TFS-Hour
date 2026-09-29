@@ -999,7 +999,7 @@ $('themeBtn').onclick = function(){
 
 /* ============ demo mode ============ */
 function startDemo(){
-  S.tok++; S.demo = true; S.base = 'https://tfs.example/tfs/Demo'; S.project = 'CasepointARA'; S.team = 'Demo Team'; S.me = 'Savan Gangani'; S.revField = F.RV_CUSTOM;
+  S.tok++; S.demo = true; S.base = 'https://tfs.example/tfs/Demo'; S.project = 'CasepointARA'; S.team = 'Demo Team'; S.me = 'Demo User'; S.revField = F.RV_CUSTOM;
   setConn('ok', 'Demo mode · sample data');
   $('filterCard').classList.remove('hidden');
   fillSel($('projSel'), [{ v:'CasepointARA', t:'CasepointARA' }], 'CasepointARA');
@@ -1008,7 +1008,7 @@ function startDemo(){
   loadDemo();
 }
 function loadDemo(){
-  var people = ['Savan Gangani', 'Mayank Shah', 'Priya Patel'];
+  var people = ['Demo User', 'Teammate One', 'Teammate Two'];
   var reqs = [[900100, 'ASTRA Chat — default skill parameters editable from plan', 'Active'], [900200, 'FOIA document field node search keyword match', 'Active'], [900300, 'DPF task template console error on open/close', 'Resolved']];
   var tasks = [
     [900101, 0, 'Backend: expose default params in plan API', 0, 30, 8, 22, 30], [900102, 0, 'UI: editable parameter chips in plan card', 0, 12, 6.5, 5.5, 12],
