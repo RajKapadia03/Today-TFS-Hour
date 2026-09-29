@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TFS Hour Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6fb; --bg2:#eef1f8; --card:#ffffff; --card2:#f8f9fd; --line:#e3e7f0; --line2:#d3d9e6;
+  --text:#141a2b; --muted:#65708a; --faint:#98a1b5;
+  --brand:#5b5bf6; --brand2:#8b5cf6; --brand-soft:rgba(91,91,246,.10);
+  --green:#12a150; --green-soft:rgba(18,161,80,.12);
+  --amber:#d98a04; --amber-soft:rgba(217,138,4,.13);
+  --red:#e0384d; --red-soft:rgba(224,56,77,.11);
+  --blue:#2f7cf6; --blue-soft:rgba(47,124,246,.11);
+  --shadow:0 1px 2px rgba(20,26,43,.05),0 6px 24px -8px rgba(20,26,43,.12);
+  --shadow-lg:0 24px 60px -18px rgba(20,26,43,.35);
+  --r:14px; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c0f1a; --bg2:#10142200; --card:#141a2b; --card2:#182036; --line:#232c44; --line2:#2e3956;
+  --text:#e8ecf7; --muted:#9aa4bf; --faint:#6b7591;
+  --brand:#7c7cff; --brand2:#a78bfa; --brand-soft:rgba(124,124,255,.16);
+  --green:#34d27b; --green-soft:rgba(52,210,123,.14); --amber:#f5b73b; --amber-soft:rgba(245,183,59,.14);
+  --red:#ff6b7d; --red-soft:rgba(255,107,125,.14); --blue:#5c9bff; --blue-soft:rgba(92,155,255,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px -10px rgba(0,0,0,.6); --shadow-lg:0 30px 70px -20px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --bg:#0c0f1a; --bg2:#10142200; --card:#141a2b; --card2:#182036; --line:#232c44; --line2:#2e3956;
+  --text:#e8ecf7; --muted:#9aa4bf; --faint:#6b7591;
+  --brand:#7c7cff; --brand2:#a78bfa; --brand-soft:rgba(124,124,255,.16);
+  --green:#34d27b; --green-soft:rgba(52,210,123,.14); --amber:#f5b73b; --amber-soft:rgba(245,183,59,.14);
+  --red:#ff6b7d; --red-soft:rgba(255,107,125,.14); --blue:#5c9bff; --blue-soft:rgba(92,155,255,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px -10px rgba(0,0,0,.6); --shadow-lg:0 30px 70px -20px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 "Hanken Grotesk","HK Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:-20% -10% auto -10%;height:520px;z-index:-1;pointer-events:none;
+  background:radial-gradient(600px 260px at 15% 20%,var(--brand-soft),transparent 70%),radial-gradient(520px 240px at 85% 0%,rgba(139,92,246,.10),transparent 70%);
+  animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate3d(0,30px,0) scale(1.05)}}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1320px;margin:0 auto;padding:0 20px 120px}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.4) blur(14px);background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid var(--line)}
+.top-in{max-width:1320px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px -6px var(--brand)}
+.brand h1{margin:0;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:12.5px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.dot.ok{background:var(--green);box-shadow:0 0 0 0 var(--green);animation:ping 2s infinite}
+.dot.busy{background:var(--amber)}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 55%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--muted);transition:.2s}
+.iconbtn:hover{color:var(--text);border-color:var(--line2);transform:translateY(-1px)}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.section{margin-top:18px}
+.connect{padding:18px;display:grid;grid-template-columns:1.3fr 1.3fr auto;gap:14px;align-items:end}
+.field label{display:block;font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.inp,.sel{width:100%;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line2);background:var(--card2);outline:none;transition:border-color .2s,box-shadow .2s}
+.inp:focus,.sel:focus{border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+.sel{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 17px,calc(100% - 12px) 17px;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+.row{display:flex;gap:10px;align-items:center}
+.chk{display:inline-flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:8px;cursor:pointer}
+.btn{height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--line2);background:var(--card);font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .2s,background .2s,opacity .2s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 8px 20px -10px var(--brand)}
+.btn.green{border:0;color:#fff;background:linear-gradient(135deg,#12a150,#10b981);box-shadow:0 8px 20px -10px #12a150}
+.btn.ghost{background:transparent}
+.btn.sm{height:32px;padding:0 12px;font-size:12.5px;border-radius:9px}
+.spin{width:15px;height:15px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.hint{font-size:12px;color:var(--muted)}
+.err{display:none;margin-top:12px;padding:10px 14px;border-radius:10px;background:var(--red-soft);color:var(--red);font-size:13px}
+.err.show{display:block;animation:rise .3s ease}
+
+.filters{padding:14px 18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.2fr) auto;gap:12px;align-items:end}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:1.35fr repeat(4,1fr);gap:14px}
+.kpi{padding:16px 18px;position:relative;overflow:hidden;animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+.kpi:nth-child(2){animation-delay:.05s}.kpi:nth-child(3){animation-delay:.1s}.kpi:nth-child(4){animation-delay:.15s}.kpi:nth-child(5){animation-delay:.2s}
+.kpi .lbl{font-size:12px;color:var(--muted);font-weight:600}
+.kpi .val{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
+.kpi .sub{font-size:12px;color:var(--faint);margin-top:2px}
+.kpi .ico{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+.today{display:flex;gap:16px;align-items:center}
+.ring{width:84px;height:84px;flex:none}
+.ring circle{fill:none;stroke-width:9;stroke-linecap:round}
+.ring .trk{stroke:var(--line)}
+.ring .done{stroke:url(#gradRing);transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)}
+.ring .pend{stroke:var(--amber);opacity:.55;transition:stroke-dashoffset .6s ease}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* grid */
+.gridcard{overflow:hidden}
+.ghead{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.ghead h2{margin:0;font-size:15px;font-weight:700}
+.tag{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--brand-soft);color:var(--brand)}
+.thead,.rrow{display:grid;grid-template-columns:36px 86px minmax(0,1fr) 110px 150px 70px 76px 76px 76px 140px;align-items:center;gap:8px;padding:0 18px}
+.thead{height:38px;font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;background:var(--card2);border-bottom:1px solid var(--line)}
+.num{text-align:right}
+.rrow{min-height:54px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
+.rrow:hover{background:var(--card2)}
+.chev{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--muted);transition:transform .3s cubic-bezier(.2,.8,.2,1),background .2s}
+.open>.rrow .chev,.open>.trow .chev{transform:rotate(90deg);background:var(--brand-soft);color:var(--brand)}
+.idlink{font-family:var(--mono);font-size:12.5px;color:var(--brand);text-decoration:none;font-weight:600}
+.idlink:hover{text-decoration:underline}
+.ttl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl small{display:block;font-weight:500;color:var(--faint);font-size:11.5px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.badge i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.s-active,.s-in-progress,.s-committed{color:var(--blue);background:var(--blue-soft);border-color:transparent}
+.s-closed,.s-done,.s-resolved{color:var(--green);background:var(--green-soft);border-color:transparent}
+.s-new,.s-proposed,.s-to-do{color:var(--muted)}
+.s-removed{color:var(--red);background:var(--red-soft);border-color:transparent}
+.who{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--muted)}
+.who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff}
+.bar{height:7px;border-radius:9px;background:var(--line);overflow:hidden}
+.bar b{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--brand),var(--brand2));width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.barwrap{display:flex;align-items:center;gap:8px}
+.barwrap .bar{flex:1}
+.barwrap em{font-style:normal;font-size:11.5px;color:var(--muted);width:34px;text-align:right}
+
+/* expand animation */
+.fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s cubic-bezier(.2,.8,.2,1)}
+.fold>div{overflow:hidden;min-height:0}
+.open>.fold{grid-template-rows:1fr}
+
+.tasks{background:var(--card2);border-bottom:1px solid var(--line);padding:8px 18px 12px 54px}
+.tgrid{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.th,.tr{display:grid;grid-template-columns:78px minmax(0,1fr) 72px 140px 140px 140px 96px;gap:10px;align-items:center;padding:0 12px}
+.th{height:32px;font-size:11px;font-weight:600;color:var(--faint);background:var(--card2);border-bottom:1px solid var(--line)}
+.th>div:nth-child(n+3){text-align:center}
+.tr{min-height:60px;border-bottom:1px solid var(--line);transition:background .2s}
+.tr:last-child{border-bottom:0}
+.tr.pending{background:var(--amber-soft)}
+.tr .oe{text-align:center;color:var(--faint)}
+.hcell{display:flex;flex-direction:column;align-items:center;gap:3px}
+.hcell .ca{font-family:var(--mono);font-size:11.5px;color:var(--faint);white-space:nowrap}
+.hcell .ca b{font-weight:600}
+.hcell .ca b.chg{color:var(--brand)}
+.hcell .ca b.warn{color:var(--red)}
+.hcell .ca b.over{color:var(--amber)}
+.switch.danger input:checked+i{background:var(--amber)}
+.tr.over{background:var(--amber-soft)}
+.tr .act{display:flex;gap:4px;justify-content:flex-end}
+.xbtn{width:30px;height:32px;border-radius:8px;border:1px solid var(--line2);background:var(--card);color:var(--muted);visibility:hidden}
+.tr.pending .xbtn{visibility:visible}
+.ob{color:var(--amber);font-size:10.5px;font-weight:700;margin-left:4px}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.empty .big{font-size:40px;margin-bottom:6px}
+
+/* hour input */
+.hq{width:96px;height:32px;padding:0 8px;text-align:center;border-radius:7px;border:1px solid var(--line2);background:var(--card);outline:none;font-family:var(--mono);font-size:13px}
+.hq:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.hfoot{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.hfoot .note{font-size:12px;color:var(--muted)}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
+.switch input{display:none}
+.switch i{width:32px;height:18px;border-radius:99px;background:var(--line2);position:relative;transition:.2s}
+.switch i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.25s cubic-bezier(.2,.8,.2,1)}
+.switch input:checked+i{background:var(--brand)}
+.switch input:checked+i::after{left:16px}
+.saved{animation:flash 1.2s ease}
+@keyframes flash{0%{box-shadow:0 0 0 0 var(--green)}30%{box-shadow:0 0 0 6px var(--green-soft);border-color:var(--green)}}
+
+/* sticky bar */
+.dock{position:fixed;left:50%;bottom:20px;transform:translate(-50%,140%);z-index:40;display:flex;align-items:center;gap:14px;padding:10px 12px 10px 18px;border-radius:16px;background:var(--text);color:var(--bg);box-shadow:var(--shadow-lg);transition:transform .45s cubic-bezier(.2,.9,.25,1.2);max-width:calc(100vw - 32px)}
+.dock.show{transform:translate(-50%,0)}
+.dock b{font-weight:800}
+.dock .btn.ghost{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 30%,transparent)}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:rgba(10,12,22,.45);backdrop-filter:blur(4px);padding:16px}
+.modal.show{display:grid;animation:fade .2s ease}
+.mbox{width:min(620px,100%);max-height:85vh;overflow:auto;padding:22px;animation:pop .35s cubic-bezier(.2,.9,.25,1.2)}
+.mbox h3{margin:0 0 4px;font-size:18px}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}}
+.chg-list{margin:14px 0;display:grid;gap:10px}
+.chg-item{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card2)}
+.chg-item .t{font-weight:600;font-size:13px;margin-bottom:6px}
+.chg-item table{width:100%;border-collapse:collapse;font-size:12.5px}
+.chg-item td{padding:3px 0}
+.chg-item td:last-child{text-align:right;font-family:var(--mono)}
+.arrow{color:var(--brand);font-weight:700}
+
+/* toast */
+.toasts{position:fixed;top:72px;right:18px;z-index:70;display:grid;gap:8px}
+.toast{min-width:260px;max-width:380px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-lg);font-size:13px;display:flex;gap:10px;align-items:flex-start;animation:tin .4s cubic-bezier(.2,.9,.25,1.2)}
+.toast.out{animation:tout .3s ease forwards}
+.toast .ti{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;font-size:12px;font-weight:800}
+.toast.ok .ti{background:var(--green-soft);color:var(--green)} .toast.bad .ti{background:var(--red-soft);color:var(--red)} .toast.info .ti{background:var(--blue-soft);color:var(--blue)}
+@keyframes tin{from{opacity:0;transform:translateX(30px)}}
+@keyframes tout{to{opacity:0;transform:translateX(30px)}}
+
+.skel{height:54px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,transparent,var(--card2),transparent);background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.hidden{display:none!important}
+
+@media (max-width:1100px){
+  .filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kpis{grid-template-columns:repeat(2,1fr)} .kpi:first-child{grid-column:1/-1}
+  .thead{display:none}
+  .rrow{grid-template-columns:30px 76px minmax(0,1fr) 120px;padding:10px 16px}
+  .rrow>.c-who,.rrow>.c-n,.rrow>.c-h{display:none}
+  .th{display:none}
+  .tr{grid-template-columns:repeat(3,minmax(0,1fr));padding:10px 12px;row-gap:8px}
+  .tr>.c-t{grid-column:2/-1}.tr>.oe{display:none}
+  .tr>.act{grid-column:1/-1}
+  .hcell::before{content:attr(data-lbl);font-size:10.5px;color:var(--faint);font-weight:600}
+  .tasks{padding-left:16px;padding-right:16px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px 120px} .top-in{padding:10px 16px}
+  .connect,.filters{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .rrow{grid-template-columns:28px minmax(0,1fr) 90px}
+  .rrow>.c-id{display:none}
+  .brand p{display:none}
+  .dock{left:16px;right:16px;transform:translateY(140%);flex-wrap:wrap}
+  .dock.show{transform:none}
+}
+/* invalid row shake */
+.tr.invalid{background:var(--red-soft)}
+.hq.bad{border-color:var(--red);color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.tr.shake{animation:shake .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+
+/* 8.5h celebration - pointer-events:none so it never blocks the page */
+.party{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden}
+.party .fly{position:absolute;bottom:-80px;left:var(--x);font-size:var(--s);white-space:nowrap;will-change:transform;
+  animation:fly var(--d) cubic-bezier(.25,.6,.35,1) var(--dl) both}
+@keyframes fly{
+  0%{transform:translate(0,0) rotate(0) scale(.6);opacity:0}
+  10%{opacity:1}
+  50%{transform:translate(calc(var(--dx) * .5),-55vh) rotate(calc(var(--r) * .5)) scale(1.1)}
+  100%{transform:translate(var(--dx),-120vh) rotate(var(--r)) scale(.9);opacity:.9}}
+.party .wing{display:inline-block;font-size:.6em;animation:flap .18s ease-in-out infinite alternate}
+.party .wing.r{transform:scaleX(-1)}
+@keyframes flap{to{translate:0 -4px;scale:1 .6}}
+.party .banner{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);text-align:center;
+  padding:22px 34px;border-radius:22px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-lg);
+  animation:bannerIn .6s cubic-bezier(.2,.9,.25,1.4) both, bannerOut .5s ease 3.4s forwards}
+.party .banner .big{font-size:46px;line-height:1;display:inline-block;animation:wobble 1s ease-in-out infinite}
+.party .banner h3{margin:10px 0 2px;font-size:22px;font-weight:800;background:linear-gradient(90deg,var(--brand),#10b981);-webkit-background-clip:text;background-clip:text;color:transparent}
+.party .banner p{margin:0;color:var(--muted);font-size:13px}
+@keyframes bannerIn{from{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-8deg)}}
+@keyframes bannerOut{to{opacity:0;transform:translate(-50%,-80%) scale(.9)}}
+@keyframes wobble{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg) translateY(-6px)}}
+.ring.goal{animation:ringPop .8s cubic-bezier(.2,.9,.25,1.4)}
+@keyframes ringPop{40%{transform:scale(1.18) rotate(8deg)}}
+/* funny mascot when a row goes red - pointer-events:none, never blocks the page */
+.mascot{position:fixed;left:20px;bottom:90px;z-index:85;display:flex;align-items:flex-end;gap:10px;pointer-events:none;max-width:min(420px,calc(100vw - 40px));
+  animation:mIn .55s cubic-bezier(.2,.9,.25,1.5) both}
+.mascot.out{animation:mOut .35s ease forwards}
+.mascot .face{font-size:58px;line-height:1;filter:drop-shadow(0 8px 12px rgba(0,0,0,.18));animation:mWiggle .9s ease-in-out infinite;transform-origin:50% 90%}
+.mascot .bubble{position:relative;margin-bottom:26px;padding:12px 16px;border-radius:16px 16px 16px 4px;background:var(--card);border:2px solid var(--red);box-shadow:var(--shadow-lg);font-size:14px;line-height:1.4}
+.mascot .bubble b{color:var(--red)}
+.mascot .bubble small{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+.mascot .bubble::before{content:"";position:absolute;left:-9px;bottom:10px;width:14px;height:14px;background:var(--card);border-left:2px solid var(--red);border-bottom:2px solid var(--red);transform:rotate(45deg)}
+.mascot .pop{position:absolute;left:34px;bottom:62px;font-size:22px;animation:mPop 1s ease-out infinite}
+@keyframes mIn{from{opacity:0;transform:translateY(40px) scale(.5) rotate(-10deg)}}
+@keyframes mOut{to{opacity:0;transform:translateY(30px) scale(.8)}}
+@keyframes mWiggle{0%,100%{transform:rotate(-8deg)}25%{transform:rotate(10deg) translateY(-6px)}50%{transform:rotate(-6deg)}75%{transform:rotate(8deg) translateY(-3px)}}
+@keyframes mPop{0%{opacity:0;transform:translate(0,0) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(14px,-26px) scale(1.2)}}
+@media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gradRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b5bf6"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs></svg>
+
+<header class="top">
+  <div class="top-in">
+    <div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+    <div class="brand"><h1>Hour Desk</h1><p>TFS daily effort updates</p></div>
+    <div class="sp"></div>
+    <div class="pill"><span class="dot" id="connDot"></span><span id="connLabel">Not connected</span></div>
+    <button class="iconbtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- connection -->
+  <section class="card section" id="connCard">
+    <div class="connect">
+      <div class="field">
+        <label for="baseInput">Collection URL</label>
+        <input class="inp" id="baseInput" value="https://tfs.casepoint.in/tfs/Casepoint" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="patInput">Personal Access Token</label>
+        <input class="inp" id="patInput" type="password" placeholder="Paste PAT (Work Items: Read &amp; Write)" autocomplete="off" spellcheck="false">
+        <label class="chk"><input type="checkbox" id="rememberPat" checked> Remember on this browser</label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="connectBtn">Connect</button>
+        <button class="btn ghost" id="demoBtn" title="Try the UI with sample data">Demo</button>
+        <button class="btn ghost" id="clearBtn" title="Forget saved PAT">Clear</button>
+      </div>
+    </div>
+    <div class="err" id="connErr" style="margin:0 18px 16px"></div>
+  </section>
+
+  <!-- filters -->
+  <section class="card section hidden" id="filterCard">
+    <div class="filters">
+      <div class="field"><label for="projSel">Project</label><select class="sel" id="projSel"></select></div>
+      <div class="field"><label for="teamSel">Team</label><select class="sel" id="teamSel"></select></div>
+      <div class="field"><label for="iterSel">Sprint</label><select class="sel" id="iterSel"></select></div>
+      <div class="field"><label for="userSel">Assigned to</label><select class="sel" id="userSel"><option value="">— load sprint —</option></select></div>
+      <div class="field"><label for="searchInp">Search</label><input class="inp" id="searchInp" placeholder="ID or title…"></div>
+      <button class="btn primary" id="loadBtn">Load sprint</button>
+    </div>
+    <div class="err" id="loadErr" style="margin:0 18px 14px"></div>
+  </section>
+
+  <!-- kpis -->
+  <section class="kpis section hidden" id="kpis">
+    <div class="card kpi">
+      <div class="today">
+        <svg class="ring" viewBox="0 0 100 100">
+          <circle class="trk" cx="50" cy="50" r="42"/>
+          <circle class="pend" id="ringPend" cx="50" cy="50" r="42" transform="rotate(-90 50 50)"/>
+          <circle class="done" id="ringDone" cx="50" cy="50" r="42" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div>
+          <div class="lbl">Logged today</div>
+          <div class="val mono"><span id="kToday">0.00</span><span style="font-size:15px;color:var(--faint)"> / <span id="kGoal">8.50</span>h</span></div>
+          <div class="sub" id="kTodaySub">Completed-work changes you made today</div>
+        </div>
+      </div>
+    </div>
+    <div class="card kpi"><div class="ico" style="background:var(--brand-soft);color:var(--brand)">▦</div><div class="lbl">Tasks</div><div class="val mono" id="kTasks">0</div><div class="sub" id="kReqs">0 requirements</div></div>
+    <div class="card kpi"><div class="ico" style="background:var(--blue-soft);color:var(--blue)">◷</div><div class="lbl">Original estimate</div><div class="val mono" id="kOE">0</div><div class="sub">hours, locked</div></div>
+    <div class="card kpi"><div class="ico" style="background:var(--green-soft);color:var(--green)">✓</div><div class="lbl">Completed</div><div class="val mono" id="kCW">0</div><div class="sub" id="kPct">0% of work</div></div>
+    <div class="card kpi"><div class="ico" style="background:var(--amber-soft);color:var(--amber)">⧗</div><div class="lbl">Remaining</div><div class="val mono" id="kRW">0</div><div class="sub" id="kPend">no pending changes</div></div>
+  </section>
+
+  <!-- grid -->
+  <section class="card section gridcard hidden" id="gridCard">
+    <div class="ghead">
+      <h2>Requirements</h2><span class="tag" id="gridTag">—</span>
+      <div class="sp"></div>
+      <label class="switch" title="When you enter Completed hours, Remaining is reduced by the same amount"><input type="checkbox" id="linkChk"><i></i>Auto-reduce remaining</label>
+      <label class="switch danger" title="Off (default): Remaining today can't be more than what is left. On: allow it - Remaining goes to 0.00 and Completed takes the full hours."><input type="checkbox" id="overChk"><i></i>Allow extra hours</label>
+      <button class="btn sm ghost" id="expandAll">Expand all</button>
+      <button class="btn sm ghost" id="collapseAll">Collapse all</button>
+    </div>
+    <div class="thead"><div></div><div>ID</div><div>Title</div><div>State</div><div>Assigned</div><div class="num">Tasks</div><div class="num">Orig.</div><div class="num">Done</div><div class="num">Left</div><div>Progress</div></div>
+    <div id="grid"></div>
+  </section>
+</main>
+
+<div class="dock" id="dock">
+  <span><b id="dockN">0</b> task(s) pending · <b id="dockH">+0.00h</b> completed today<b id="dockBad" style="color:#ff6b7d"></b></span>
+  <button class="btn sm ghost" id="discardAll">Discard</button>
+  <button class="btn sm green" id="saveAll">Update all hours</button>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="card mbox">
+    <h3 id="mTitle">Update hours in TFS</h3>
+    <div class="hint">Only the effort fields below are sent. Title, state, assignment and other fields are not touched.</div>
+    <div class="chg-list" id="mList"></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" id="mCancel">Cancel</button>
+      <button class="btn green" id="mOk">Confirm &amp; update</button>
+    </div>
+  </div>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+'use strict';
+/* ============ constants ============ */
+var F = {
+  OE:'Microsoft.VSTS.Scheduling.OriginalEstimate',
+  RW:'Microsoft.VSTS.Scheduling.RemainingWork',
+  CW:'Microsoft.VSTS.Scheduling.CompletedWork',
+  RV_CUSTOM:'Casepoint.TFS.CustomFields.RevisedEstimate',
+  RV_STD:'Microsoft.VSTS.Scheduling.RevisedEstimate'
+};
+var GOAL = 8.5;
+var LS = 'hourdesk.';
+var REQ_TYPES = ['requirement','product backlog item','user story','bug','feature'];
+
+/* ============ state ============ */
+var S = {
+  base:'', me:'', demo:false, revField:F.RV_CUSTOM,
+  project:'', team:'', iterPath:'',
+  tasks:{}, reqs:{}, order:[],          // order = req ids
+  drafts:{},                            // taskId -> {RW,CW,RV,link,rwTouched}
+  openReqs:new Set(), openTasks:new Set(),
+  loggedToday:0, tok:0, dataDemo:false
+};
+
+/* ============ helpers ============ */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function q4(x){ return Math.round((+x || 0) * 4) / 4; }                 // snap to .00/.25/.50/.75
+function onGrid(x){ return Math.abs((+x || 0) * 4 - Math.round((+x || 0) * 4)) < 1e-9; }
+function h2(x){ return (+x || 0).toFixed(2); }
+function lsGet(k, d){ try { var v = localStorage.getItem(LS + k); return v == null ? d : v; } catch(e){ return d; } }
+function lsSet(k, v){ try { v == null ? localStorage.removeItem(LS + k) : localStorage.setItem(LS + k, v); } catch(e){} }
+function pat(){ return $('patInput').value.trim(); }
+function hdrs(ct){ return { 'Authorization':'Basic ' + btoa(':' + pat()), 'Content-Type': ct || 'application/json', 'Accept':'application/json' }; }
+function seg(s){ return encodeURIComponent(s); }
+function nameOf(v){
+  if (!v) return '';
+  if (typeof v === 'object') return v.displayName || (v.name ? nameOf(String(v.name)) : '') || v.uniqueName || '';
+  var m = /^(.*?)\s*<.*>$/.exec(v); return (m ? m[1] : v).trim();
+}
+function sameUser(a, b){ return a && b && a.trim().toLowerCase() === b.trim().toLowerCase(); }
+function stateCls(s){ return 's-' + String(s || '').toLowerCase().replace(/\s+/g, '-'); }
+function initials(n){ var p = String(n || '?').split(/\s+/).filter(Boolean); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
+function hue(n){ var h = 0; for (var i = 0; i < (n || '').length; i++) h = (h * 31 + n.charCodeAt(i)) % 360; return h; }
+function avatar(n){ return '<span class="av" style="background:hsl(' + hue(n) + ' 62% 52%)">' + esc(initials(n)) + '</span>'; }
+function wiUrl(id){ return S.base + '/' + seg(S.project) + '/_workitems/edit/' + id; }
+function isToday(d){ var x = new Date(d), n = new Date(); return x.getFullYear() === n.getFullYear() && x.getMonth() === n.getMonth() && x.getDate() === n.getDate(); }
+
+async function tfs(url, opt){
+  var r = await fetch(url, Object.assign({ headers: hdrs(), cache:'no-store' }, opt || {}));
+  if (!r.ok){
+    var t = ''; try { t = await r.text(); } catch(e){}
+    var msg = 'HTTP ' + r.status;
+    if (r.status === 401) msg = 'Unauthorized (401) — PAT is invalid, expired, or missing the Work Items scope.';
+    else if (r.status === 403) msg = 'Forbidden (403) — your account cannot access this resource.';
+    else { try { var j = JSON.parse(t); if (j.message) msg += ': ' + j.message; } catch(e){ if (t) msg += ': ' + t.slice(0, 160); } }
+    var err = new Error(msg); err.status = r.status; throw err;
+  }
+  return r.status === 204 ? null : r.json();
+}
+async function pool(items, n, fn){
+  var i = 0, out = [];
+  async function worker(){ while (i < items.length){ var k = i++; out[k] = await fn(items[k]); } }
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
+  return out;
+}
+
+/* ============ toast / status ============ */
+function toast(msg, kind){
+  var el = document.createElement('div');
+  el.className = 'toast ' + (kind || 'info');
+  el.innerHTML = '<span class="ti">' + (kind === 'ok' ? '✓' : kind === 'bad' ? '!' : 'i') + '</span><div>' + msg + '</div>';
+  $('toasts').appendChild(el);
+  setTimeout(function(){ el.classList.add('out'); setTimeout(function(){ el.remove(); }, 320); }, kind === 'bad' ? 6500 : 3500);
+}
+function setConn(state, label){ $('connDot').className = 'dot ' + (state || ''); $('connLabel').textContent = label; }
+function showErr(id, msg){ var e = $(id); e.textContent = msg || ''; e.classList.toggle('show', !!msg); }
+function busy(btn, on, label){
+  if (on){ btn.dataset.lbl = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>' + (label || 'Working…'); }
+  else { btn.disabled = false; if (btn.dataset.lbl) btn.innerHTML = btn.dataset.lbl; }
+}
+function fillSel(sel, items, selected, placeholder){
+  sel.innerHTML = (placeholder ? '<option value="">' + esc(placeholder) + '</option>' : '') +
+    items.map(function(i){ return '<option value="' + esc(i.v) + '"' + (i.v === selected ? ' selected' : '') + '>' + esc(i.t) + '</option>'; }).join('');
+}
+
+/* ============ connect & metadata ============ */
+async function connect(){
+  showErr('connErr', '');
+  S.base = $('baseInput').value.trim().replace(/\/+$/, '');
+  if (!S.base || !pat()){ showErr('connErr', 'Enter the collection URL and your PAT.'); return; }
+  S.demo = false; var tok = ++S.tok;
+  var btn = $('connectBtn'); busy(btn, true, 'Connecting…'); setConn('busy', 'Connecting…');
+  try {
+    var cd = await tfs(S.base + '/_apis/connectionData');
+    if (tok !== S.tok) return;            // user switched to demo meanwhile
+    var au = cd.authenticatedUser || {};
+    S.me = au.providerDisplayName || au.customDisplayName || au.displayName || '';
+    S.meId = (au.id || '').toLowerCase();
+    if ($('rememberPat').checked) lsSet('pat', btoa(pat())); else lsSet('pat', null);
+    lsSet('base', S.base);
+    setConn('ok', S.me ? 'Connected · ' + S.me : 'Connected');
+    // detect which revised-estimate field this collection has
+    tfs(S.base + '/_apis/wit/fields?api-version=3.0').then(function(d){
+      var refs = (d.value || []).map(function(f){ return f.referenceName; });
+      S.revField = refs.indexOf(F.RV_CUSTOM) > -1 ? F.RV_CUSTOM : (refs.indexOf(F.RV_STD) > -1 ? F.RV_STD : null);
+    }).catch(function(){});
+    $('filterCard').classList.remove('hidden');
+    S.dataDemo = false; S.tasks = {}; S.reqs = {}; S.drafts = {}; render();
+    await loadProjects();
+    toast('Connected to TFS' + (S.me ? ' as <b>' + esc(S.me) + '</b>' : ''), 'ok');
+  } catch(e){
+    setConn('', 'Not connected');
+    showErr('connErr', e.message.indexOf('Failed to fetch') > -1
+      ? 'Could not reach TFS. Check VPN/network, the URL, and that this page is opened from a host TFS allows (CORS).'
+      : e.message);
+  } finally { busy(btn, false); }
+}
+async function loadProjects(){
+  var d = await tfs(S.base + '/_apis/projects?api-version=2.0&$top=300');
+  var list = (d.value || []).map(function(p){ return { v:p.name, t:p.name }; }).sort(function(a, b){ return a.t.localeCompare(b.t); });
+  var pick = lsGet('project', '') || 'CasepointARA';
+  if (!list.some(function(p){ return p.v === pick; })) pick = list.length ? list[0].v : '';
+  fillSel($('projSel'), list, pick);
+  S.project = pick;
+  await loadTeams();
+}
+async function loadTeams(){
+  S.project = $('projSel').value; lsSet('project', S.project);
+  fillSel($('teamSel'), [], '', 'Loading…');
+  var teams = await myTeams(S.project);
+  var list = teams.map(function(t){ return { v:t.name, t:t.name }; }).sort(function(a, b){ return a.t.localeCompare(b.t); });
+  if (!list.length){
+    fillSel($('teamSel'), [], '', 'No teams for your account');
+    fillSel($('iterSel'), [], '', 'No team');
+    S.team = '';
+    showErr('loadErr', 'Your account is not a member of any team in "' + S.project + '". Pick another project.');
+    return;
+  }
+  showErr('loadErr', '');
+  var pick = lsGet('team', '');
+  if (!list.some(function(t){ return t.v === pick; })) pick = list[0].v;
+  fillSel($('teamSel'), list, pick);
+  S.team = pick;
+  await loadIterations();
+}
+/* only the teams the PAT's user belongs to */
+async function myTeams(project){
+  var base = S.base + '/_apis/projects/' + seg(project) + '/teams';
+  try {
+    // TFS 2018+/Azure DevOps Server: server-side membership filter
+    var d = await tfs(base + '?$mine=true&$top=500&api-version=4.1');
+    return d.value || [];
+  } catch(e){
+    if (e.status === 401 || e.status === 403) throw e;
+  }
+  // older servers: list all teams, keep those whose member list contains me
+  var all = (await tfs(base + '?$top=500&api-version=2.0')).value || [];
+  var hits = await pool(all, 6, async function(t){
+    try {
+      var m = await tfs(base + '/' + seg(t.id || t.name) + '/members?$top=1000&api-version=2.0');
+      return (m.value || []).some(function(x){
+        var idn = x.identity || x;
+        return (S.meId && String(idn.id || '').toLowerCase() === S.meId) || sameUser(idn.displayName, S.me);
+      }) ? t : null;
+    } catch(err){ return null; }
+  });
+  return hits.filter(Boolean);
+}
+async function loadIterations(){
+  S.team = $('teamSel').value; lsSet('team', S.team);
+  fillSel($('iterSel'), [], '', 'Loading…');
+  if (!S.team){ fillSel($('iterSel'), [], '', 'No team'); return; }
+  var d = await tfs(S.base + '/' + seg(S.project) + '/' + seg(S.team) + '/_apis/work/teamsettings/iterations?api-version=3.0');
+  var its = (d.value || []);
+  var current = its.find(function(i){ return i.attributes && String(i.attributes.timeFrame).toLowerCase() === 'current'; });
+  var list = its.slice().reverse().map(function(i){
+    var tf = i.attributes && i.attributes.timeFrame ? String(i.attributes.timeFrame).toLowerCase() : '';
+    return { v:i.path, t:i.name + (tf === 'current' ? '  ● current' : '') };
+  });
+  fillSel($('iterSel'), list, current ? current.path : (list[0] ? list[0].v : ''));
+}
+
+/* ============ load sprint ============ */
+async function loadSprint(){
+  if (S.demo){ loadDemo(); return; }
+  showErr('loadErr', '');
+  S.project = $('projSel').value; S.team = $('teamSel').value; S.iterPath = $('iterSel').value;
+  if (!S.iterPath){ showErr('loadErr', 'Pick a sprint.'); return; }
+  var btn = $('loadBtn'); busy(btn, true, 'Loading…');
+  $('gridCard').classList.remove('hidden');
+  $('grid').innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+  try {
+    var tf = await tfs(S.base + '/' + seg(S.project) + '/' + seg(S.team) + '/_apis/work/teamsettings/teamfieldvalues?api-version=3.0').catch(function(){ return { values:[] }; });
+    var areas = (tf.values || []).map(function(v){ return "[System.AreaPath] UNDER '" + v.value.replace(/'/g, "''") + "'"; });
+    var wiql = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '" + S.project.replace(/'/g, "''") + "'" +
+      " AND [System.WorkItemType] = 'Task'" +
+      " AND [System.IterationPath] UNDER '" + S.iterPath.replace(/'/g, "''") + "'" +
+      " AND [System.State] <> 'Removed'" +
+      (areas.length ? ' AND (' + areas.join(' OR ') + ')' : '') +
+      ' ORDER BY [System.Id]';
+    var res = await tfs(S.base + '/' + seg(S.project) + '/_apis/wit/wiql?api-version=3.0', { method:'POST', body:JSON.stringify({ query:wiql }) });
+    var ids = (res.workItems || []).map(function(w){ return w.id; });
+    var raw = await fetchItems(ids, true);
+    S.tasks = {}; S.reqs = {}; S.drafts = {};
+    var parentIds = new Set();
+    raw.forEach(function(w){
+      var f = w.fields || {}, pid = null;
+      (w.relations || []).forEach(function(r){
+        if (r.rel === 'System.LinkTypes.Hierarchy-Reverse'){ var m = /\/(\d+)$/.exec(r.url); if (m) pid = +m[1]; }
+      });
+      if (pid) parentIds.add(pid);
+      S.tasks[w.id] = toTask(w, pid);
+    });
+    var parents = await fetchItems(Array.from(parentIds), false);
+    parents.forEach(function(w){
+      var f = w.fields || {};
+      S.reqs[w.id] = { id:w.id, title:f['System.Title'] || '', type:f['System.WorkItemType'] || '', state:f['System.State'] || '', assignee:nameOf(f['System.AssignedTo']) };
+    });
+    S.dataDemo = false;
+    afterLoad();
+    loadTodayLog();
+  } catch(e){
+    showErr('loadErr', e.message); $('grid').innerHTML = '';
+  } finally { busy(btn, false); }
+}
+async function fetchItems(ids, relations){
+  var batches = []; for (var i = 0; i < ids.length; i += 200) batches.push(ids.slice(i, i + 200));
+  var out = [];
+  await pool(batches, 4, async function(b){
+    var url = S.base + '/_apis/wit/workitems?ids=' + b.join(',') + (relations ? '&$expand=relations' : '&fields=System.Id,System.Title,System.WorkItemType,System.State,System.AssignedTo') + '&api-version=3.0';
+    var d = await tfs(url); out = out.concat(d.value || []);
+  });
+  return out;
+}
+function toTask(w, pid){
+  var f = w.fields || {};
+  var rv = f[F.RV_CUSTOM] != null ? f[F.RV_CUSTOM] : (f[F.RV_STD] != null ? f[F.RV_STD] : 0);
+  return {
+    id:w.id, rev:w.rev, parentId:pid != null ? pid : (S.tasks[w.id] ? S.tasks[w.id].parentId : null),
+    title:f['System.Title'] || '', state:f['System.State'] || '', assignee:nameOf(f['System.AssignedTo']) || 'Unassigned',
+    OE:+f[F.OE] || 0, RW:+f[F.RW] || 0, CW:+f[F.CW] || 0, RV:+rv || 0
+  };
+}
+function afterLoad(){
+  // user dropdown from assignees; default = me
+  var names = Array.from(new Set(Object.values(S.tasks).map(function(t){ return t.assignee; }))).sort();
+  var saved = lsGet('user', null);
+  var pick = names.find(function(n){ return sameUser(n, S.me); }) || (saved != null && (saved === '*' || names.indexOf(saved) > -1) ? saved : '*');
+  fillSel($('userSel'), [{ v:'*', t:'All users (' + names.length + ')' }].concat(names.map(function(n){ return { v:n, t:n + (sameUser(n, S.me) ? '  (me)' : '') }; })), pick);
+  var it = $('iterSel').selectedOptions[0];
+  $('gridTag').textContent = (it ? it.textContent.replace('● current', '').trim() : '') + ' · ' + S.team;
+  $('kpis').classList.remove('hidden'); $('gridCard').classList.remove('hidden');
+  S.openReqs = new Set(); S.openTasks = new Set();
+  render();
+  // auto-open requirements when a single user is selected
+  if ($('userSel').value !== '*'){ visibleReqs().forEach(function(r){ S.openReqs.add(String(r.id)); }); render(); }
+}
+
+/* today's logged hours = CompletedWork increases made by me today (from work item history) */
+async function loadTodayLog(){
+  S.loggedToday = 0; renderKpis();
+  if (!S.me) return;
+  var mine = Object.values(S.tasks).filter(function(t){ return sameUser(t.assignee, S.me); });
+  S.todayRead = false; renderKpis();
+  var total = 0;
+  await pool(mine, 6, async function(t){
+    try {
+      var d = await tfs(S.base + '/_apis/wit/workitems/' + t.id + '/updates?api-version=3.0');
+      (d.value || []).forEach(function(u){
+        var c = u.fields && u.fields[F.CW];
+        if (!c) return;
+        // who: revisedBy is {id,name:"Name <DOMAIN/user>"} on older TFS, {id,displayName} on newer
+        var rb = u.revisedBy || {};
+        var mineChange = (S.meId && String(rb.id || '').toLowerCase() === S.meId) || sameUser(nameOf(rb), S.me);
+        // when: ChangedDate of this revision (revisedDate = when it was superseded; 9999-01-01 for the latest)
+        var cd = u.fields['System.ChangedDate'];
+        var when = cd && cd.newValue ? cd.newValue : (u.revisedDate && new Date(u.revisedDate).getFullYear() < 9000 ? u.revisedDate : null);
+        if (mineChange && when && isToday(when)) total += (+c.newValue || 0) - (+c.oldValue || 0);
+      });
+    } catch(e){}
+  });
+  S.loggedToday = q4(total);
+  S.todayRead = true;
+  renderKpis();
+}
+
+/* ============ rendering ============ */
+function visibleTasks(){
+  var u = $('userSel').value || '*', qy = $('searchInp').value.trim().toLowerCase();
+  return Object.values(S.tasks).filter(function(t){
+    if (u !== '*' && t.assignee !== u) return false;
+    if (!qy) return true;
+    var r = S.reqs[t.parentId];
+    return String(t.id).indexOf(qy) > -1 || t.title.toLowerCase().indexOf(qy) > -1 ||
+      (r && (String(r.id).indexOf(qy) > -1 || r.title.toLowerCase().indexOf(qy) > -1));
+  });
+}
+function visibleReqs(){
+  var groups = {};
+  visibleTasks().forEach(function(t){ var k = t.parentId && S.reqs[t.parentId] ? t.parentId : 0; (groups[k] = groups[k] || []).push(t); });
+  return Object.keys(groups).map(function(k){
+    var r = +k ? S.reqs[k] : { id:0, title:'Tasks without a parent requirement', type:'—', state:'', assignee:'' };
+    var ts = groups[k].sort(function(a, b){ return a.id - b.id; });
+    return Object.assign({}, r, { tasks:ts });
+  }).sort(function(a, b){ return (a.id === 0) - (b.id === 0) || a.id - b.id; });
+}
+function pct(t){ var tot = t.CW + t.RW; return tot > 0 ? Math.round(t.CW / tot * 100) : 0; }
+function render(){
+  var reqs = visibleReqs();
+  if (!reqs.length){
+    $('grid').innerHTML = '<div class="empty"><div class="big">🗂️</div>No tasks for this selection.<div class="hint">Try another sprint, user, or clear the search.</div></div>';
+    renderKpis(); renderDock(); return;
+  }
+  $('grid').innerHTML = reqs.map(renderReq).join('');
+  visibleTasks().forEach(function(t){ if (isPending(t.id)) refreshPanel(t.id); });
+  requestAnimationFrame(function(){ document.querySelectorAll('#grid .bar b').forEach(function(b){ b.style.width = b.dataset.w + '%'; }); });
+  renderKpis(); renderDock();
+}
+function renderReq(r){
+  var sum = r.tasks.reduce(function(a, t){ a.OE += t.OE; a.CW += t.CW; a.RW += t.RW; return a; }, { OE:0, CW:0, RW:0 });
+  var p = sum.CW + sum.RW > 0 ? Math.round(sum.CW / (sum.CW + sum.RW) * 100) : 0;
+  var open = S.openReqs.has(String(r.id));
+  return '<div class="req' + (open ? ' open' : '') + '" data-req="' + r.id + '">' +
+    '<div class="rrow" data-act="toggleReq">' +
+      '<div><span class="chev">›</span></div>' +
+      '<div class="c-id">' + (r.id ? '<a class="idlink" target="_blank" rel="noopener" href="' + esc(wiUrl(r.id)) + '" data-stop>' + r.id + '</a>' : '') + '</div>' +
+      '<div class="ttl">' + esc(r.title) + '<small>' + esc(r.type) + '</small></div>' +
+      '<div>' + (r.state ? '<span class="badge ' + stateCls(r.state) + '"><i></i>' + esc(r.state) + '</span>' : '') + '</div>' +
+      '<div class="who c-who">' + (r.assignee ? avatar(r.assignee) + '<span>' + esc(r.assignee) + '</span>' : '') + '</div>' +
+      '<div class="num mono c-n">' + r.tasks.length + '</div>' +
+      '<div class="num mono c-h">' + h2(sum.OE) + '</div><div class="num mono c-h">' + h2(sum.CW) + '</div><div class="num mono c-h">' + h2(sum.RW) + '</div>' +
+      '<div class="barwrap"><div class="bar"><b data-w="' + p + '"></b></div><em>' + p + '%</em></div>' +
+    '</div>' +
+    '<div class="fold"><div><div class="tasks"><div class="tgrid">' +
+      '<div class="th"><div>Task</div><div></div><div>Original 🔒</div><div>Remaining (−)</div><div>Completed (+)</div><div>Revised (+)</div><div></div></div>' +
+      r.tasks.map(renderTask).join('') + '</div></div></div></div>' +
+  '</div>';
+}
+function renderTask(t){
+  var off = !onGrid(t.RW) || !onGrid(t.CW) || !onGrid(t.RV);
+  return '<div class="tr tcard' + (isPending(t.id) ? ' pending' : '') + '" data-task="' + t.id + '">' +
+    '<div><a class="idlink" target="_blank" rel="noopener" href="' + esc(wiUrl(t.id)) + '">' + t.id + '</a></div>' +
+    '<div class="ttl c-t" title="' + esc(t.title) + '">' + esc(t.title) + '<small>' + esc(t.state) + ' · ' + esc(t.assignee) + (off ? '<span class="ob" title="A value is not .00/.25/.50/.75">· off-grid</span>' : '') + '</small></div>' +
+    '<div class="oe mono" title="Original Estimate (read-only)">' + h2(t.OE) + '</div>' +
+    hourCell(t, 'RW', 'Remaining') + hourCell(t, 'CW', 'Completed') +
+    (S.revField ? hourCell(t, 'RV', 'Revised') : '<div class="hcell"><span class="ca">n/a</span></div>') +
+    '<div class="act"><button class="xbtn" data-act="reset" title="Clear">×</button><button class="btn sm green" data-act="save" disabled>Update</button></div>' +
+  '</div>';
+}
+function hourCell(t, kind, label){
+  var v = draft(t.id)[kind];
+  return '<div class="hcell" data-lbl="' + label + '">' +
+    '<input class="hq" data-kind="' + kind + '" type="number" min="0" max="99.75" step="0.25" inputmode="decimal" placeholder="0.00" value="' + (v > 0 ? h2(v) : '') + '" aria-label="' + label + ' hours today for ' + t.id + '">' +
+    '<span class="ca">' + h2(t[kind]) + ' → <b data-aft="' + kind + '">' + h2(t[kind]) + '</b></span>' +
+  '</div>';
+}
+
+/* ============ drafts ============ */
+function draft(id){ return S.drafts[id] || (S.drafts[id] = { RW:0, CW:0, RV:0, rwTouched:false }); }
+function linkOn(){ return $('linkChk').checked; }
+function isPending(id){ var d = S.drafts[id]; return !!d && (d.RW > 0 || d.CW > 0 || d.RV > 0); }
+// invalid = today's remaining reduction is more than what is left on the task
+function allowOver(){ return $('overChk').checked; }
+function isOver(id){ var d = S.drafts[id], t = S.tasks[id]; return !!d && !!t && d.RW > t.RW + 1e-9; }
+// invalid = over the remaining AND the "Allow extra hours" switch is off
+function isInvalid(id){ return !allowOver() && isOver(id); }
+var MASCOT = {
+  faces:['🤦‍♂️','🧐','🙈','😵‍💫','🤖','🦸‍♂️','🐒'],
+  pops:['❗','💢','⏰','🧮','😅'],
+  lines:[
+    'Aye bhai, pela hours to check karo! 🤦‍♂️',
+    'Bhai bhai bhai… <b>{rem}h</b> j baaki che, <b>{val}h</b> kyathi lavya? 😅',
+    'Arre boss, time machine che ke shu? ⏰',
+    'Ruk ja bhai! ✋ Remaining thi vadhare nahi chale 😂',
+    'Hours no hisaab gadbad che bhai 🧮',
+    'Oye! Aatla kalak kya thi kadhya? 🕵️‍♂️',
+    'Bhai, TFS pan hasi padse aa joine 🤣'
+  ]
+};
+var mascotT = 0, mascotLast = -1;
+function mascot(t, val){
+  if (Date.now() - mascotT < 1500) return;          // don't spam
+  mascotT = Date.now();
+  var old = document.querySelector('.mascot'); if (old) old.remove();
+  var pick = function(a){ return a[Math.floor(Math.random() * a.length)]; };
+  var i; do { i = Math.floor(Math.random() * MASCOT.lines.length); } while (i === mascotLast && MASCOT.lines.length > 1);
+  mascotLast = i;
+  var line = MASCOT.lines[i].replace('{rem}', h2(t.RW)).replace('{val}', h2(val));
+  var el = document.createElement('div'); el.className = 'mascot'; el.setAttribute('role', 'status');
+  el.innerHTML = '<span class="pop" aria-hidden="true">' + pick(MASCOT.pops) + '</span><span class="face" aria-hidden="true">' + pick(MASCOT.faces) + '</span>' +
+    '<div class="bubble">' + line + '<small>#' + t.id + ' · max <b>' + h2(t.RW) + 'h</b> remaining</small></div>';
+  document.body.appendChild(el);
+  setTimeout(function(){ el.classList.add('out'); setTimeout(function(){ el.remove(); }, 380); }, 4000);
+}
+function shake(el){ if (!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+function afterVals(t){
+  var d = draft(t.id);
+  var rwRaw = t.RW - d.RW;
+  return { RW:q4(Math.max(0, rwRaw)), CW:q4(t.CW + d.CW), RV:q4(t.RV + d.RV), rwNeg:rwRaw < 0 };
+}
+function setInput(card, kind, v){
+  var inp = card.querySelector('.hq[data-kind="' + kind + '"]'); if (inp) inp.value = v > 0 ? h2(v) : '';
+}
+function refreshPanel(id){
+  var card = document.querySelector('.tcard[data-task="' + id + '"]'); if (!card) return;
+  var t = S.tasks[id], d = draft(id), a = afterVals(t), msgs = [];
+  ['RW', 'CW', 'RV'].forEach(function(k){
+    var el = card.querySelector('[data-aft="' + k + '"]'); if (!el) return;
+    var changed = d[k] > 0;
+    el.textContent = h2(changed ? a[k] : t[k]);
+    el.classList.toggle('chg', changed);
+    var blocked = k === 'RW' && a.rwNeg && !allowOver();
+    el.classList.toggle('warn', blocked);
+    el.classList.toggle('over', k === 'RW' && a.rwNeg && allowOver());
+    if (blocked) el.textContent = 'max ' + h2(t.RW);
+    if (changed && !onGrid(t[k])) msgs.push({ RW:'Remaining', CW:'Completed', RV:'Revised' }[k] + ' ' + h2(t[k]) + ' is not a quarter value; result rounded to ' + h2(a[k]) + '.');
+  });
+  var inv = isInvalid(id);
+  if (inv) msgs.unshift('Only ' + h2(t.RW) + 'h remaining - reduce Remaining to ' + h2(t.RW) + ' or less (raise Revised Estimate if the task needs more).');
+  card.classList.toggle('invalid', inv);
+  card.classList.toggle('over', !inv && isOver(id));
+  if (!inv && isOver(id)) msgs.unshift('Extra hours allowed: Remaining will be set to 0.00.');
+  var rin = card.querySelector('.hq[data-kind="RW"]'); if (rin) rin.classList.toggle('bad', inv);
+  card.title = msgs.join(' ');
+  var pend = isPending(id);
+  card.classList.toggle('pending', pend);
+  var sb = card.querySelector('[data-act="save"]'); if (sb) sb.disabled = !pend || inv;
+  renderKpis(); renderDock();
+}
+function onDraftInput(card, kind, v, typing){
+  var id = +card.dataset.task, d = draft(id);
+  d[kind] = q4(Math.max(0, Math.min(99.75, v || 0)));
+  if (kind === 'RW') d.rwTouched = true;
+  if (kind === 'CW' && linkOn() && !d.rwTouched){ d.RW = d.CW; setInput(card, 'RW', d.RW); }
+  if (!typing) setInput(card, kind, d[kind]);
+  var was = card.classList.contains('invalid');
+  refreshPanel(id);
+  if (isInvalid(id) && (typing || !was)) shake(card);
+  if (isInvalid(id) && !was) mascot(S.tasks[id], d.RW);
+}
+
+/* ============ kpis / dock ============ */
+function renderKpis(){
+  var ts = visibleTasks();
+  var sum = ts.reduce(function(a, t){ a.OE += t.OE; a.CW += t.CW; a.RW += t.RW; return a; }, { OE:0, CW:0, RW:0 });
+  var reqN = new Set(ts.map(function(t){ return t.parentId || 0; })).size;
+  $('kTasks').textContent = ts.length; $('kReqs').textContent = reqN + ' requirement' + (reqN === 1 ? '' : 's');
+  $('kOE').textContent = h2(sum.OE); $('kCW').textContent = h2(sum.CW); $('kRW').textContent = h2(sum.RW);
+  $('kPct').textContent = (sum.CW + sum.RW > 0 ? Math.round(sum.CW / (sum.CW + sum.RW) * 100) : 0) + '% of work';
+  var pend = pendingIds(), pendH = pend.reduce(function(a, id){ return a + draft(id).CW; }, 0);
+  $('kPend').textContent = pend.length ? pend.length + ' task(s) pending' : 'no pending changes';
+  $('kToday').textContent = h2(S.loggedToday + pendH); $('kGoal').textContent = h2(GOAL);
+  var left = GOAL - S.loggedToday - pendH;
+  $('kTodaySub').textContent = S.todayRead === false ? 'Reading today’s history…'
+    : h2(S.loggedToday) + ' saved' + (pendH ? ' · ' + h2(pendH) + ' pending' : '') + ' · ' + (left > 0 ? h2(left) + 'h left' : 'goal reached');
+  var C = 2 * Math.PI * 42;
+  var done = Math.min(1, S.loggedToday / GOAL), both = Math.min(1, (S.loggedToday + pendH) / GOAL);
+  ['ringDone', 'ringPend'].forEach(function(id){ $(id).style.strokeDasharray = C; });
+  $('ringDone').style.strokeDashoffset = C * (1 - done);
+  $('ringPend').style.strokeDashoffset = C * (1 - both);
+}
+function pendingIds(){ return Object.keys(S.drafts).filter(isPending).map(Number).filter(function(id){ return S.tasks[id]; }); }
+function renderDock(){
+  var ids = pendingIds();
+  $('dock').classList.toggle('show', ids.length > 0);
+  $('dockN').textContent = ids.length;
+  var nb = ids.filter(isInvalid).length;
+  $('dockBad').textContent = nb ? ' · ' + nb + ' to fix' : '';
+  // any red row blocks Update all until it is fixed (or cleared)
+  if (!S.saving){ $('saveAll').disabled = nb > 0; $('saveAll').title = nb ? 'Fix the red row' + (nb === 1 ? '' : 's') + ' first' : ''; }
+  $('dockH').textContent = '+' + h2(ids.reduce(function(a, id){ return a + draft(id).CW; }, 0)) + 'h';
+}
+
+/* ============ save ============ */
+function confirmSave(ids){
+  ids = ids.filter(isPending);
+  var bad = ids.filter(isInvalid);
+  if (bad.length){
+    bad.forEach(function(id){ shake(document.querySelector('.tcard[data-task="' + id + '"]')); });
+    toast('<b>' + bad.length + '</b> task' + (bad.length === 1 ? ' has' : 's have') + ' more Remaining hours than left - fix the red row' + (bad.length === 1 ? '' : 's') + ' first.', 'bad');
+    ids = ids.filter(function(id){ return !isInvalid(id); });
+  }
+  if (!ids.length) return;
+  $('mList').innerHTML = ids.map(function(id){
+    var t = S.tasks[id], d = draft(id), a = afterVals(t);
+    var rows = [['Completed Work', 'CW'], ['Remaining Work', 'RW'], ['Revised Estimate', 'RV']].filter(function(p){ return d[p[1]] > 0; })
+      .map(function(p){ return '<tr><td>' + p[0] + ' <span class="hint">(' + (p[1] === 'RW' ? '−' : '+') + h2(d[p[1]]) + ')</span></td><td>' + h2(t[p[1]]) + ' <span class="arrow">→</span> <b>' + h2(a[p[1]]) + '</b></td></tr>'; }).join('');
+    return '<div class="chg-item"><div class="t"><span class="mono" style="color:var(--brand)">#' + id + '</span> ' + esc(t.title) + '</div><table>' + rows + '</table></div>';
+  }).join('');
+  $('modal').classList.add('show');
+  $('mOk').onclick = function(){ $('modal').classList.remove('show'); doSave(ids); };
+  setTimeout(function(){ $('mOk').focus(); }, 50);
+}
+async function doSave(ids){
+  var ok = 0, bad = 0, added = 0;
+  S.saving = true; $('saveAll').disabled = true;
+  for (var i = 0; i < ids.length; i++){
+    var id = ids[i], t = S.tasks[id], d = draft(id), a = afterVals(t);
+    var card = document.querySelector('.tcard[data-task="' + id + '"]');
+    var sb = card && card.querySelector('[data-act="save"]'); if (sb) busy(sb, true, 'Saving…');
+    try {
+      var body = [{ op:'test', path:'/rev', value:t.rev }];
+      if (d.CW > 0) body.push({ op:'add', path:'/fields/' + F.CW, value:a.CW });
+      if (d.RW > 0) body.push({ op:'add', path:'/fields/' + F.RW, value:a.RW });
+      if (d.RV > 0 && S.revField) body.push({ op:'add', path:'/fields/' + S.revField, value:a.RV });
+      var wi;
+      if (S.dataDemo){ await new Promise(function(r){ setTimeout(r, 450); }); wi = demoApply(t, a, d); }
+      else wi = await tfs(S.base + '/_apis/wit/workitems/' + id + '?api-version=3.0', { method:'PATCH', headers:hdrs('application/json-patch+json'), body:JSON.stringify(body) });
+      S.tasks[id] = toTask(wi, t.parentId);
+      added += d.CW; ok++;
+      delete S.drafts[id];
+    } catch(e){
+      bad++;
+      var why = (e.status === 400 || e.status === 409 || e.status === 412) ? 'the item was changed by someone else — reload the sprint and try again' : e.message;
+      toast('<b>#' + id + '</b> not updated: ' + esc(why), 'bad');
+      if (sb) busy(sb, false);
+    }
+  }
+  S.loggedToday = q4(S.loggedToday + added);
+  render();
+  ids.forEach(function(id){ if (!S.drafts[id]){ var c = document.querySelector('.tcard[data-task="' + id + '"]'); if (c) c.classList.add('saved'); } });
+  S.saving = false; renderDock();
+  if (ok) toast('Updated <b>' + ok + '</b> task' + (ok === 1 ? '' : 's') + (added ? ' · +' + h2(added) + 'h completed' : ''), 'ok');
+  if (ok && S.loggedToday >= GOAL && S.loggedToday - added < GOAL) celebrate();
+}
+
+/* ============ celebration ============ */
+function celebrate(){
+  var ring = $('ringDone').closest('.ring');
+  ring.classList.remove('goal'); void ring.getBoundingClientRect(); ring.classList.add('goal');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches){ toast('🎉 ' + h2(GOAL) + 'h logged for today!', 'ok'); return; }
+  var old = document.querySelector('.party'); if (old) old.remove();
+  var box = document.createElement('div'); box.className = 'party'; box.setAttribute('aria-hidden', 'true');
+  var items = ['💻','💻','💻','💻','💻','☕','🚀','🎉','⏰','✨','💻','🏠'], html = '';
+  for (var i = 0; i < 26; i++){
+    var e = items[i % items.length], laptop = e === '💻';
+    html += '<span class="fly" style="--x:' + (Math.random() * 94).toFixed(1) + '%;--dx:' + ((Math.random() - .5) * 60).toFixed(0) + 'vw;--r:' + ((Math.random() - .5) * (laptop ? 90 : 720)).toFixed(0) + 'deg;' +
+      '--d:' + (2.4 + Math.random() * 1.8).toFixed(2) + 's;--dl:' + (Math.random() * 1.2).toFixed(2) + 's;--s:' + (laptop ? 34 + Math.random() * 22 : 22 + Math.random() * 16).toFixed(0) + 'px">' +
+      (laptop ? '<span class="wing">🪽</span>' + e + '<span class="wing r">🪽</span>' : e) + '</span>';
+  }
+  html += '<div class="banner"><div class="big">💻✈️</div><h3>' + h2(GOAL) + 'h done - laptop is flying home!</h3><p>Great work today. Your hours are saved in TFS.</p></div>';
+  box.innerHTML = html;
+  document.body.appendChild(box);
+  setTimeout(function(){ box.remove(); }, 4600);
+}
+
+/* ============ events ============ */
+$('grid').addEventListener('click', function(e){
+  if (e.target.closest('[data-stop]')) return;
+  var el = e.target.closest('[data-act]'); if (!el) return;
+  var act = el.dataset.act;
+  if (act === 'toggleReq'){
+    var r = el.closest('.req'), k = r.dataset.req;
+    r.classList.toggle('open'); r.classList.contains('open') ? S.openReqs.add(k) : S.openReqs.delete(k);
+    return;
+  }
+  var card = el.closest('.tcard'); if (!card) return;
+  var id = +card.dataset.task;
+  if (act === 'toggleTask'){
+    card.classList.toggle('open'); card.classList.contains('open') ? S.openTasks.add(String(id)) : S.openTasks.delete(String(id));
+    return;
+  }
+  if (act === 'reset'){ delete S.drafts[id]; ['RW', 'CW', 'RV'].forEach(function(k){ setInput(card, k, 0); }); refreshPanel(id); return; }
+  if (act === 'save'){ confirmSave([id]); }
+});
+$('linkChk').checked = lsGet('link', '1') === '1';
+$('linkChk').onchange = function(){ lsSet('link', linkOn() ? '1' : '0'); };
+$('overChk').checked = false;          // always starts off - not remembered on purpose
+$('overChk').onchange = function(){
+  pendingIds().forEach(refreshPanel);
+  renderDock();
+  toast(allowOver() ? 'Extra hours <b>allowed</b> - Remaining can go to 0.00 and Completed takes the full hours.' : 'Extra hours <b>blocked</b> again - Remaining limit is back on.', 'info');
+};
+
+$('grid').addEventListener('input', function(e){
+  if (!e.target.matches('.hq')) return;
+  onDraftInput(e.target.closest('.tcard'), e.target.dataset.kind, parseFloat(e.target.value), true);
+});
+$('grid').addEventListener('focusout', function(e){      // snap typed value to .00/.25/.50/.75
+  if (!e.target.matches('.hq')) return;
+  onDraftInput(e.target.closest('.tcard'), e.target.dataset.kind, parseFloat(e.target.value), false);
+});
+
+$('connectBtn').onclick = connect;
+$('patInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') connect(); });
+$('clearBtn').onclick = function(){ $('patInput').value = ''; lsSet('pat', null); setConn('', 'PAT cleared'); toast('Saved PAT removed from this browser', 'info'); };
+$('demoBtn').onclick = startDemo;
+$('projSel').onchange = function(){ if (!S.demo) loadTeams().catch(function(e){ showErr('loadErr', e.message); }); };
+$('teamSel').onchange = function(){ if (!S.demo) loadIterations().catch(function(e){ showErr('loadErr', e.message); }); };
+$('loadBtn').onclick = loadSprint;
+$('userSel').onchange = function(){
+  lsSet('user', $('userSel').value);
+  if ($('userSel').value !== '*') visibleReqs().forEach(function(r){ S.openReqs.add(String(r.id)); });
+  render();
+};
+var sT; $('searchInp').addEventListener('input', function(){ clearTimeout(sT); sT = setTimeout(render, 180); });
+$('expandAll').onclick = function(){ visibleReqs().forEach(function(r){ S.openReqs.add(String(r.id)); }); render(); };
+$('collapseAll').onclick = function(){ S.openReqs.clear(); S.openTasks.clear(); render(); };
+$('saveAll').onclick = function(){ confirmSave(pendingIds()); };
+$('discardAll').onclick = function(){ S.drafts = {}; render(); toast('Pending hours discarded', 'info'); };
+$('mCancel').onclick = function(){ $('modal').classList.remove('show'); };
+$('modal').addEventListener('click', function(e){ if (e.target === $('modal')) $('modal').classList.remove('show'); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') $('modal').classList.remove('show'); });
+window.addEventListener('beforeunload', function(e){ if (pendingIds().length){ e.preventDefault(); e.returnValue = ''; } });
+
+function setTheme(t){ if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; lsSet('theme', t || null); }
+$('themeBtn').onclick = function(){
+  var cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+};
+
+/* ============ demo mode ============ */
+function startDemo(){
+  S.tok++; S.demo = true; S.base = 'https://tfs.example/tfs/Demo'; S.project = 'CasepointARA'; S.team = 'Demo Team'; S.me = 'Savan Gangani'; S.revField = F.RV_CUSTOM;
+  setConn('ok', 'Demo mode · sample data');
+  $('filterCard').classList.remove('hidden');
+  fillSel($('projSel'), [{ v:'CasepointARA', t:'CasepointARA' }], 'CasepointARA');
+  fillSel($('teamSel'), [{ v:'Demo Team', t:'Demo Team' }], 'Demo Team');
+  fillSel($('iterSel'), [{ v:'CasepointARA\\Sprint 42', t:'Sprint 42  ● current' }], 'CasepointARA\\Sprint 42');
+  loadDemo();
+}
+function loadDemo(){
+  var people = ['Savan Gangani', 'Mayank Shah', 'Priya Patel'];
+  var reqs = [[900100, 'ASTRA Chat — default skill parameters editable from plan', 'Active'], [900200, 'FOIA document field node search keyword match', 'Active'], [900300, 'DPF task template console error on open/close', 'Resolved']];
+  var tasks = [
+    [900101, 0, 'Backend: expose default params in plan API', 0, 30, 8, 22, 30], [900102, 0, 'UI: editable parameter chips in plan card', 0, 12, 6.5, 5.5, 12],
+    [900103, 0, 'Unit tests for param override', 1, 6, 6, 0, 6], [900104, 1, 'Fix tree search filter on keyword', 0, 8, 2.2, 6, 8.2],
+    [900105, 1, 'QA support & regression', 2, 4, 4, 0, 4], [900106, 2, 'Dispose Kendo window on close', 0, 5, 0, 5, 5], [900107, 2, 'Code review fixes', 1, 3, 1, 2, 3]
+  ];
+  S.reqs = {}; S.tasks = {}; S.drafts = {}; S.dataDemo = true;
+  reqs.forEach(function(r){ S.reqs[r[0]] = { id:r[0], title:r[1], type:'Requirement', state:r[2], assignee:people[0] }; });
+  tasks.forEach(function(t){
+    var f = { 'System.Title':t[2], 'System.State':t[6] === 0 ? 'Closed' : 'Active', 'System.AssignedTo':people[t[3]] }; f[F.OE] = t[4]; f[F.RW] = t[5]; f[F.CW] = t[6]; f[F.RV_CUSTOM] = t[7];
+    S.tasks[t[0]] = toTask({ id:t[0], rev:5, fields:f }, reqs[t[1]][0]);
+  });
+  S.loggedToday = 3.5;
+  afterLoad(); renderKpis();
+}
+function demoApply(t, a, d){
+  var f = { 'System.Title':t.title, 'System.State':t.state, 'System.AssignedTo':t.assignee }; f[F.OE] = t.OE;
+  f[F.RW] = d.RW > 0 ? a.RW : t.RW; f[F.CW] = d.CW > 0 ? a.CW : t.CW; f[F.RV_CUSTOM] = d.RV > 0 ? a.RV : t.RV;
+  return { id:t.id, rev:t.rev + 1, fields:f };
+}
+
+/* ============ boot ============ */
+(function boot(){
+  var th = lsGet('theme', null); if (th) setTheme(th);
+  var b = lsGet('base', ''); if (b) $('baseInput').value = b;
+  var p = lsGet('pat', ''); if (p){ try { $('patInput').value = atob(p); setConn('', 'PAT loaded from this browser'); connect(); } catch(e){} }
+})();
+</script>
+</body>
+</html>
