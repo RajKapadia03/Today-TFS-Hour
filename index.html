@@ -308,6 +308,61 @@ button{cursor:pointer}
 @keyframes mWiggle{0%,100%{transform:rotate(-8deg)}25%{transform:rotate(10deg) translateY(-6px)}50%{transform:rotate(-6deg)}75%{transform:rotate(8deg) translateY(-3px)}}
 @keyframes mPop{0%{opacity:0;transform:translate(0,0) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(14px,-26px) scale(1.2)}}
 @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
+
+/* ===== settings drawer (holds the connection card) ===== */
+.drawer-bg{position:fixed;inset:0;z-index:55;background:rgba(10,12,22,.35);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .25s}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:56;width:min(420px,100vw);display:flex;flex-direction:column;background:var(--card);border-left:1px solid var(--line);box-shadow:var(--shadow-lg);transform:translateX(105%);transition:transform .35s cubic-bezier(.2,.9,.25,1)}
+body.drawer-on .drawer{transform:none}
+body.drawer-on .drawer-bg{opacity:1;pointer-events:auto}
+.drawer-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.drawer-h h3{margin:0;font-size:16px;font-weight:700}
+.drawer-b{flex:1;overflow:auto}
+.drawer #connCard{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent}
+.drawer .connect{grid-template-columns:1fr;align-items:stretch}
+.drawer .connect .row{flex-wrap:wrap}
+.drawer .connect .row .btn.primary{flex:1;justify-content:center}
+#settingsBtn[aria-expanded="true"]{color:var(--brand);border-color:var(--brand)}
+
+/* ===== Completed hours tab (own view - the Hour update view is only hidden, not changed) ===== */
+.tabs{display:inline-flex;gap:2px;padding:3px;border-radius:12px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);max-width:100%}
+.tabs button{border:0;background:transparent;height:34px;padding:0 16px;border-radius:9px;font-weight:600;font-size:13.5px;color:var(--muted);white-space:nowrap;transition:background .2s,color .2s}
+.tabs button.on{background:var(--brand-soft);color:var(--brand)}
+body.ch-on #filterCard,body.ch-on #kpis,body.ch-on #autoCard,body.ch-on #gridCard,body.ch-on #dock,body.ch-on #modeSeg{display:none!important}
+body:not(.ch-on) #chView{display:none}
+.ch-filters{padding:14px 18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 140px minmax(0,1fr) minmax(0,1.1fr) auto;gap:12px;align-items:end}
+.ch-head,.ch-row{display:grid;grid-template-columns:36px 86px minmax(0,1fr) 100px 130px 48px 72px 72px 92px 92px 124px;align-items:center;gap:8px;padding:0 18px}
+.ch-head{height:38px;font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;background:var(--card2);border-bottom:1px solid var(--line)}
+.ch-row{min-height:54px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
+.ch-row:hover{background:var(--card2)}
+.open>.ch-row .chev{transform:rotate(90deg);background:var(--brand-soft);color:var(--brand)}
+.ch-tot{font-weight:800;color:var(--green)}
+.ch-cur.diff{color:var(--red);font-weight:700}
+.ch-act{display:flex;justify-content:flex-end}
+.ch-ok{font-size:12px;font-weight:600;color:var(--green);white-space:nowrap}
+.ch-th,.ch-tr{display:grid;grid-template-columns:78px minmax(0,1fr) 110px 100px 150px 76px 76px 86px;gap:10px;align-items:center;padding:0 12px}
+.ch-th{height:32px;font-size:11px;font-weight:600;color:var(--faint);background:var(--card2);border-bottom:1px solid var(--line)}
+.ch-tr{min-height:48px;border-bottom:1px solid var(--line);font-size:13px}
+.ch-tr:last-child{border-bottom:0}
+.ch-tr.sum{min-height:40px;background:var(--card2);font-weight:700}
+.ch-oth{display:inline-block;font-size:10.5px;font-weight:700;color:var(--amber);background:var(--amber-soft);padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap}
+.badge.d-dev{color:var(--brand);background:var(--brand-soft);border-color:transparent}
+.badge.d-test{color:var(--amber);background:var(--amber-soft);border-color:transparent}
+.ch-mob{display:none}
+.ch-note{padding:0 18px 14px;font-size:12.5px;color:var(--muted)}
+@media (max-width:1100px){
+  .ch-filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ch-head,.ch-th{display:none}
+  .ch-row{grid-template-columns:30px 76px minmax(0,1fr) 80px 120px;padding:10px 16px}
+  .ch-row>.c-x,.ch-tr>.c-x{display:none}
+  .ch-tr{grid-template-columns:70px minmax(0,1fr) 80px;padding:8px 12px}
+  .ch-mob{display:inline}
+}
+@media (max-width:640px){
+  .ch-filters{grid-template-columns:1fr}
+  .ch-row{grid-template-columns:28px minmax(0,1fr) 70px 112px}
+  .ch-row>.c-id{display:none}
+  .tabs{display:flex}.tabs button{flex:1}
+}
 </style>
 </head>
 <body>
@@ -320,11 +375,20 @@ button{cursor:pointer}
     <div class="sp"></div>
     <div class="seg" id="modeSeg" role="group" aria-label="Update mode"><button data-mode="manual" class="on" aria-pressed="true">Manual</button><button data-mode="auto" aria-pressed="false">Auto</button></div>
     <div class="pill"><span class="dot" id="connDot"></span><span id="connLabel">Not connected</span></div>
+    <button class="iconbtn" id="settingsBtn" title="Connection settings" aria-label="Connection settings" aria-controls="settingsDrawer" aria-expanded="false"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="iconbtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
   </div>
 </header>
 
-<main class="wrap">
+<!-- settings drawer (connection) -->
+<div class="drawer-bg" id="drawerBg"></div>
+<aside class="drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" inert>
+  <div class="drawer-h">
+    <h3 id="drawerTitle">Connection settings</h3>
+    <div class="sp"></div>
+    <button class="iconbtn" id="drawerClose" title="Close" aria-label="Close settings">✕</button>
+  </div>
+  <div class="drawer-b">
   <!-- connection -->
   <section class="card section" id="connCard">
     <div class="connect">
@@ -345,6 +409,15 @@ button{cursor:pointer}
     </div>
     <div class="err" id="connErr" style="margin:0 18px 16px"></div>
   </section>
+  </div>
+</aside>
+
+<main class="wrap">
+  <!-- view tabs -->
+  <nav class="tabs section" id="mainTabs" role="tablist" aria-label="View">
+    <button role="tab" data-tab="desk" class="on" aria-selected="true">Hour update</button>
+    <button role="tab" data-tab="ch" aria-selected="false">Completed hours</button>
+  </nav>
 
   <!-- filters -->
   <section class="card section hidden" id="filterCard">
@@ -404,6 +477,58 @@ button{cursor:pointer}
     </div>
     <div id="grid"></div>
   </section>
+
+  <!-- ===== Completed hours tab ===== -->
+  <div id="chView">
+    <section class="card section" id="chNotConn">
+      <div class="empty"><div class="big">🔌</div>Open <b>⚙ Settings</b> (top right) and connect with your PAT, or try Demo, to see completed hours by requirement.</div>
+    </section>
+    <section class="card section hidden" id="chFilter">
+      <div class="ch-filters">
+        <div class="field"><label for="chProj">Project</label><select class="sel" id="chProj"></select></div>
+        <div class="field"><label for="chTeam">Team</label><select class="sel" id="chTeam"></select></div>
+        <div class="field"><label for="chIter">Sprint</label><select class="sel" id="chIter"></select></div>
+        <div class="field"><label for="chDisc">Discipline</label><select class="sel" id="chDisc"><option value="">Dev + Test</option><option value="Development">Development</option><option value="Test">Test</option></select></div>
+        <div class="field"><label for="chOwner">Task owner</label><select class="sel" id="chOwner"><option value="">All task owners</option></select></div>
+        <div class="field"><label for="chSearch">Search</label><input class="inp" id="chSearch" placeholder="Requirement / task ID or title…"></div>
+        <button class="btn primary" id="chLoadBtn">Load</button>
+      </div>
+      <div class="ch-note">Sums <b>Completed Work</b> of every <b>Development</b> and <b>Test</b> task under each requirement in the sprint, including tasks that are in other sprints or already closed. A requirement from another sprint is included when one of its tasks is in this sprint. <b>Update</b> writes the tasks' total into the requirement's own Completed Work; it shows only when the two differ.</div>
+      <div class="err" id="chErr" style="margin:0 18px 14px"></div>
+    </section>
+
+    <section class="kpis section hidden" id="chKpis">
+      <div class="card kpi"><div class="ico" style="background:var(--green-soft);color:var(--green)">✓</div><div class="lbl">Completed hours</div><div class="val mono" id="chkTotal">0.00</div><div class="sub" id="chkTotalSub">Development + Test tasks</div></div>
+      <div class="card kpi"><div class="ico" style="background:var(--brand-soft);color:var(--brand)">⌘</div><div class="lbl">Development</div><div class="val mono" id="chkDev">0.00</div><div class="sub" id="chkDevSub">0 tasks</div></div>
+      <div class="card kpi"><div class="ico" style="background:var(--amber-soft);color:var(--amber)">⚑</div><div class="lbl">Test</div><div class="val mono" id="chkTest">0.00</div><div class="sub" id="chkTestSub">0 tasks</div></div>
+      <div class="card kpi"><div class="ico" style="background:var(--blue-soft);color:var(--blue)">▦</div><div class="lbl">Requirements</div><div class="val mono" id="chkReq">0</div><div class="sub" id="chkReqSub">—</div></div>
+      <div class="card kpi"><div class="ico" style="background:var(--card2);color:var(--muted)">◷</div><div class="lbl">Tasks</div><div class="val mono" id="chkTasks">0</div><div class="sub" id="chkTasksSub">—</div></div>
+    </section>
+
+    <section class="card section gridcard hidden" id="chCard">
+      <div class="ghead">
+        <h2>Completed hours by requirement</h2><span class="tag" id="chTag">—</span>
+        <div class="sp"></div>
+        <label class="switch" title="Show only requirements whose Completed Work differs from the sum of their tasks"><input type="checkbox" id="chOnlyDiff"><i></i>Only not matching</label>
+        <button class="btn sm ghost" id="chExpand">Expand all</button>
+        <button class="btn sm ghost" id="chCollapse">Collapse all</button>
+      </div>
+      <div id="chGrid"></div>
+    </section>
+
+    <!-- confirm popup for requirement Completed Work update -->
+    <div class="modal" id="chModal" role="dialog" aria-modal="true" aria-labelledby="chmTitle">
+      <div class="card mbox">
+        <h3 id="chmTitle">Update requirement Completed Work</h3>
+        <div class="hint">Only the requirement's Completed Work is changed. Title, state, assignment and other fields are not touched.</div>
+        <div class="chg-list" id="chmList"></div>
+        <div class="row" style="justify-content:flex-end">
+          <button class="btn ghost" id="chmCancel">Cancel</button>
+          <button class="btn green" id="chmOk">Confirm &amp; update</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 
 <div class="dock" id="dock">
@@ -1228,6 +1353,406 @@ function demoApply(t, a, d){
   f[F.RW] = d.RW > 0 ? a.RW : t.RW; f[F.CW] = d.CW > 0 ? a.CW : t.CW; f[F.RV_CUSTOM] = d.RV > 0 ? a.RV : t.RV;
   return { id:t.id, rev:t.rev + 1, fields:f };
 }
+
+/* ============ Completed hours tab ============
+   Separate view with its own state (CH), filters, loaders and rendering.
+   It only reads the shared connection/helpers; the Hour update flow above is not changed. */
+var CH = { tab:'desk', srcTok:-1, reqs:{}, tasks:{}, noParent:[], iterPath:'', open:new Set() };
+var CH_PARENT = 'System.LinkTypes.Hierarchy-Reverse', CH_CHILD = 'System.LinkTypes.Hierarchy-Forward';
+
+function chLinks(w, rel){
+  return ((w && w.relations) || []).filter(function(r){ return r.rel === rel; })
+    .map(function(r){ var m = /\/(\d+)$/.exec(r.url || ''); return m ? +m[1] : 0; }).filter(Boolean);
+}
+function chType(w){ return String((w && w.fields && w.fields['System.WorkItemType']) || '').toLowerCase(); }
+function chUnder(p, root){ var a = String(p || '').toLowerCase(), b = String(root || '').toLowerCase(); return !!b && (a === b || a.indexOf(b + '\\') === 0); }
+function chSprint(p){ var s = String(p || '').split('\\'); return s[s.length - 1] || '—'; }
+function chIsClosed(st){ return /^(closed|done|resolved)$/i.test(String(st || '').trim()); }
+// Discipline field (any "*.Discipline"), falling back to Activity; only Development and Test are counted
+function chDisc(f){
+  var k = Object.keys(f).find(function(x){ return /\.Discipline$/i.test(x) && f[x]; });
+  var v = String((k ? f[k] : f['Microsoft.VSTS.Common.Activity']) || '').trim();
+  return /^dev/i.test(v) ? 'Development' : /^test/i.test(v) ? 'Test' : '';
+}
+function chMkTask(w, reqId, iter){
+  if (!w || chType(w) !== 'task') return null;
+  var f = w.fields || {};
+  if (String(f['System.State'] || '').toLowerCase() === 'removed') return null;
+  var d = chDisc(f); if (!d) return null;
+  return {
+    id:w.id, reqId:reqId, title:f['System.Title'] || '', state:f['System.State'] || '', assignee:nameOf(f['System.AssignedTo']) || 'Unassigned',
+    disc:d, iter:f['System.IterationPath'] || '', other:!chUnder(f['System.IterationPath'], iter),
+    OE:+f[F.OE] || 0, RW:+f[F.RW] || 0, CW:+f[F.CW] || 0
+  };
+}
+// requirements of the sprint + parents of the sprint's tasks (a requirement closed in another sprint still counts)
+function chReqSet(items, reqIds, taskIds){
+  var s = new Set(reqIds);
+  taskIds.forEach(function(id){ var p = chLinks(items[id], CH_PARENT)[0]; if (p) s.add(p); });
+  return s;
+}
+// every Dev/Test child task of each requirement, whatever its sprint or state
+function chBuild(items, reqSet, taskIds, iter){
+  var reqs = {}, tasks = {}, noParent = [];
+  reqSet.forEach(function(id){
+    var w = items[id]; if (!w || chType(w) === 'task') return;
+    var f = w.fields || {};
+    var r = { id:id, title:f['System.Title'] || '', type:f['System.WorkItemType'] || '', state:f['System.State'] || '',
+      assignee:nameOf(f['System.AssignedTo']), iter:f['System.IterationPath'] || '', taskIds:[],
+      rev:w.rev, cw:f[F.CW] != null ? +f[F.CW] || 0 : null };
+    r.other = !chUnder(r.iter, iter);
+    chLinks(w, CH_CHILD).forEach(function(k){ var t = chMkTask(items[k], id, iter); if (t){ tasks[k] = t; r.taskIds.push(k); } });
+    reqs[id] = r;
+  });
+  taskIds.forEach(function(id){
+    var p = chLinks(items[id], CH_PARENT)[0];
+    if (tasks[id] || (p && reqs[p])) return;
+    var t = chMkTask(items[id], 0, iter); if (t){ tasks[id] = t; noParent.push(id); }
+  });
+  return { reqs:reqs, tasks:tasks, noParent:noParent };
+}
+async function chGet(ids){
+  ids = Array.from(new Set(ids));
+  var batches = [], out = [];
+  for (var i = 0; i < ids.length; i += 200) batches.push(ids.slice(i, i + 200));
+  await pool(batches, 4, async function(b){
+    var d = await tfs(S.base + '/_apis/wit/workitems?ids=' + b.join(',') + '&$expand=relations&api-version=3.0');
+    out = out.concat(d.value || []);
+  });
+  return out;
+}
+async function chFetch(project, team, iter){
+  var tf = await tfs(S.base + '/' + seg(project) + '/' + seg(team) + '/_apis/work/teamsettings/teamfieldvalues?api-version=3.0').catch(function(){ return { values:[] }; });
+  var areas = (tf.values || []).map(function(v){ return "[System.AreaPath] UNDER '" + v.value.replace(/'/g, "''") + "'"; });
+  var where = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '" + project.replace(/'/g, "''") + "'" +
+    " AND [System.IterationPath] UNDER '" + iter.replace(/'/g, "''") + "'" +
+    " AND [System.State] <> 'Removed'" + (areas.length ? ' AND (' + areas.join(' OR ') + ')' : '');
+  var run = async function(q){
+    var r = await tfs(S.base + '/' + seg(project) + '/_apis/wit/wiql?api-version=3.0', { method:'POST', body:JSON.stringify({ query:q }) });
+    return (r.workItems || []).map(function(w){ return w.id; });
+  };
+  var reqIds;
+  try { reqIds = await run(where + " AND [System.WorkItemType] IN GROUP 'Microsoft.RequirementCategory'"); }
+  catch(e){ if (e.status === 401 || e.status === 403) throw e; reqIds = await run(where + " AND [System.WorkItemType] = 'Requirement'"); }
+  var taskIds = await run(where + " AND [System.WorkItemType] = 'Task'");
+  var items = {}, put = function(a){ a.forEach(function(w){ items[w.id] = w; }); };
+  put(await chGet(taskIds));
+  var reqSet = chReqSet(items, reqIds, taskIds);
+  put(await chGet(Array.from(reqSet).filter(function(id){ return !items[id]; })));
+  var kids = [];
+  reqSet.forEach(function(id){ if (items[id] && chType(items[id]) !== 'task') kids = kids.concat(chLinks(items[id], CH_CHILD)); });
+  put(await chGet(kids.filter(function(id){ return !items[id]; })));
+  return chBuild(items, reqSet, taskIds, iter);
+}
+
+/* --- tab switching & filters --- */
+function chSetTab(t){
+  CH.tab = t;
+  document.body.classList.toggle('ch-on', t === 'ch');
+  document.querySelectorAll('#mainTabs button').forEach(function(b){ var on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  if (t === 'ch') chEnter();
+}
+function chCopySel(from, to){
+  var src = $(from), dst = $(to);
+  dst.length = 0;
+  Array.from(src.options).forEach(function(o){ dst.add(new Option(o.text, o.value)); });
+  dst.value = src.value;
+}
+// pick up the current connection (project/team/sprint lists) once per connect or demo start
+function chEnter(){
+  var on = !$('filterCard').classList.contains('hidden');
+  $('chNotConn').classList.toggle('hidden', on);
+  $('chFilter').classList.toggle('hidden', !on);
+  if (!on || CH.srcTok === S.tok || !$('iterSel').value) return;
+  CH.srcTok = S.tok;
+  chCopySel('projSel', 'chProj'); chCopySel('teamSel', 'chTeam'); chCopySel('iterSel', 'chIter');
+  CH.reqs = {}; CH.tasks = {}; CH.noParent = []; CH.open = new Set();
+  showErr('chErr', '');
+  fillSel($('chOwner'), [], '', 'All task owners');
+  $('chKpis').classList.add('hidden'); $('chCard').classList.add('hidden');
+}
+async function chLoadTeams(){
+  var project = $('chProj').value;
+  fillSel($('chTeam'), [], '', 'Loading…'); fillSel($('chIter'), [], '', '—');
+  var list = (await myTeams(project)).map(function(t){ return { v:t.name, t:t.name }; }).sort(function(a, b){ return a.t.localeCompare(b.t); });
+  if (!list.length){ fillSel($('chTeam'), [], '', 'No teams for your account'); fillSel($('chIter'), [], '', 'No team'); return; }
+  fillSel($('chTeam'), list, list[0].v);
+  await chLoadIters();
+}
+async function chLoadIters(){
+  var project = $('chProj').value, team = $('chTeam').value;
+  fillSel($('chIter'), [], '', 'Loading…');
+  if (!team){ fillSel($('chIter'), [], '', 'No team'); return; }
+  var its = (await tfs(S.base + '/' + seg(project) + '/' + seg(team) + '/_apis/work/teamsettings/iterations?api-version=3.0')).value || [];
+  var cur = its.find(function(i){ return i.attributes && String(i.attributes.timeFrame).toLowerCase() === 'current'; });
+  var list = its.slice().reverse().map(function(i){
+    var tf = i.attributes && i.attributes.timeFrame ? String(i.attributes.timeFrame).toLowerCase() : '';
+    return { v:i.path, t:i.name + (tf === 'current' ? '  ● current' : '') };
+  });
+  fillSel($('chIter'), list, cur ? cur.path : (list[0] ? list[0].v : ''));
+}
+async function chLoad(){
+  showErr('chErr', '');
+  var iter = $('chIter').value;
+  if (!iter){ showErr('chErr', 'Pick a sprint.'); return; }
+  var btn = $('chLoadBtn'); busy(btn, true, 'Loading…');
+  $('chCard').classList.remove('hidden');
+  $('chGrid').replaceChildren(chEl('div', 'skel'), chEl('div', 'skel'), chEl('div', 'skel'), chEl('div', 'skel'));
+  try {
+    var d = S.demo ? chDemo(iter) : await chFetch($('chProj').value, $('chTeam').value, iter);
+    CH.reqs = d.reqs; CH.tasks = d.tasks; CH.noParent = d.noParent; CH.iterPath = iter; CH.open = new Set();
+    var it = $('chIter').selectedOptions[0];
+    $('chTag').textContent = (it ? it.textContent.replace('● current', '').trim() : chSprint(iter)) + ' · ' + $('chTeam').value;
+    var keep = $('chOwner').value;
+    var names = Array.from(new Set(Object.values(CH.tasks).map(function(t){ return t.assignee; }))).sort();
+    fillSel($('chOwner'), names.map(function(n){ return { v:n, t:n + (sameUser(n, S.me) ? '  (me)' : '') }; }), names.indexOf(keep) > -1 ? keep : '', 'All task owners (' + names.length + ')');
+    chRender();
+  } catch(e){
+    showErr('chErr', e.message.indexOf('Failed to fetch') > -1 ? 'Could not reach TFS. Check VPN/network and the connection above.' : e.message);
+    $('chGrid').replaceChildren(); $('chCard').classList.add('hidden'); $('chKpis').classList.add('hidden');
+  } finally { busy(btn, false); }
+}
+
+/* --- rendering (DOM nodes + textContent only) --- */
+function chEl(tag, cls, kids, attrs){
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (attrs) Object.keys(attrs).forEach(function(k){ e.setAttribute(k, attrs[k]); });
+  [].concat(kids == null ? [] : kids).forEach(function(k){
+    if (k == null || k === false) return;
+    e.appendChild(typeof k === 'object' ? k : document.createTextNode(String(k)));
+  });
+  return e;
+}
+function chBadge(cls, text){ return chEl('span', 'badge ' + cls, [chEl('i'), text]); }
+function chIdLink(id, stop){ var a = { target:'_blank', rel:'noopener', href:wiUrl(id) }; if (stop) a['data-stop'] = ''; return chEl('a', 'idlink', [String(id)], a); }
+function chAvatar(n){ return chEl('span', 'av', [initials(n)], { style:'background:hsl(' + hue(n) + ' 62% 52%)' }); }
+function chNum(v, cls){ return chEl('div', 'num mono ' + (cls || ''), [v]); }
+function chSum(ts){
+  return ts.reduce(function(a, t){
+    a.CW += t.CW; a.OE += t.OE; a.RW += t.RW;
+    if (t.disc === 'Development'){ a.dev += t.CW; a.devN++; } else { a.test += t.CW; a.testN++; }
+    if (t.other) a.other++;
+    if (chIsClosed(t.state)) a.closed++;
+    return a;
+  }, { CW:0, OE:0, RW:0, dev:0, test:0, devN:0, testN:0, other:0, closed:0 });
+}
+function chRows(){
+  var disc = $('chDisc').value, own = $('chOwner').value, qy = $('chSearch').value.trim().toLowerCase();
+  var hit = function(x){ return !qy || String(x.id).indexOf(qy) > -1 || String(x.title).toLowerCase().indexOf(qy) > -1; };
+  var groups = Object.values(CH.reqs).sort(function(a, b){ return a.id - b.id; });
+  if (CH.noParent.length) groups.push({ id:0, title:'Tasks in this sprint without a parent requirement', type:'—', state:'', assignee:'', iter:'', other:false, taskIds:CH.noParent });
+  var rows = groups.map(function(r){
+    var rh = hit(r);
+    var ts = r.taskIds.map(function(id){ return CH.tasks[id]; })
+      .filter(function(t){ return (!disc || t.disc === disc) && (!own || t.assignee === own) && (rh || hit(t)); })
+      .sort(function(a, b){ return (a.disc > b.disc) - (a.disc < b.disc) || a.id - b.id; });
+    return { r:r, ts:ts };
+  });
+  return {
+    rows:rows.filter(function(x){ return x.ts.length && (!$('chOnlyDiff').checked || chNeedsUpdate(x.r)); }),
+    mismatch:Object.values(CH.reqs).filter(chNeedsUpdate).length,
+    noDevTest:Object.values(CH.reqs).filter(function(r){ return !r.taskIds.length; }).length
+  };
+}
+function chRender(){
+  var v = chRows(), all = [];
+  v.rows.forEach(function(x){ all = all.concat(x.ts); });
+  var s = chSum(all), reqN = v.rows.filter(function(x){ return x.r.id; }).length;
+  $('chKpis').classList.remove('hidden');
+  $('chkTotal').textContent = h2(s.CW);
+  $('chkTotalSub').textContent = 'Original ' + h2(s.OE) + ' · Remaining ' + h2(s.RW);
+  $('chkDev').textContent = h2(s.dev); $('chkDevSub').textContent = s.devN + ' task' + (s.devN === 1 ? '' : 's');
+  $('chkTest').textContent = h2(s.test); $('chkTestSub').textContent = s.testN + ' task' + (s.testN === 1 ? '' : 's');
+  $('chkReq').textContent = reqN;
+  $('chkReqSub').textContent = (v.mismatch ? v.mismatch + ' need update' : 'all match') + (v.noDevTest ? ' · ' + v.noDevTest + ' without Dev/Test (hidden)' : '');
+  $('chkTasks').textContent = all.length;
+  $('chkTasksSub').textContent = s.other + ' in other sprints · ' + s.closed + ' closed';
+  if (!v.rows.length){
+    $('chGrid').replaceChildren(chEl('div', 'empty', [chEl('div', 'big', ['🗂️']), 'No Development or Test tasks for this selection.',
+      chEl('div', 'hint', ['Try another sprint, discipline, owner, or clear the search.'])]));
+    return;
+  }
+  var head = chEl('div', 'ch-head', ['', 'ID', 'Requirement', 'State', 'Assigned', 'Tasks', 'Dev', 'Test', 'Tasks CW', 'Current CW', '']
+    .map(function(t, i){ return chEl('div', i >= 5 ? 'num' : null, [t], i === 8 ? { title:'Sum of Completed Work of all Development + Test tasks' } : i === 9 ? { title:'Completed Work saved on the requirement now' } : null); }));
+  $('chGrid').replaceChildren.apply($('chGrid'), [head].concat(v.rows.map(chRenderReq)));
+}
+function chRenderReq(x){
+  // row numbers are the whole requirement (all Dev/Test tasks); the task list below follows the filters
+  var r = x.r, s = chSum(x.ts), full = chFull(r), open = CH.open.has(String(r.id)), need = chNeedsUpdate(r);
+  var act = !r.id ? null
+    : need ? chEl('button', 'btn sm green', ['Update ' + h2(chRound(full.CW))], { 'data-chupd':String(r.id), title:'Set requirement Completed Work to ' + h2(chRound(full.CW)) })
+    : chEl('span', 'ch-ok', ['✓ matches'], { title:'Requirement Completed Work equals the tasks total' });
+  var row = chEl('div', 'ch-row', [
+    chEl('div', null, [chEl('span', 'chev', ['›'])]),
+    chEl('div', 'c-id', [r.id ? chIdLink(r.id, true) : null]),
+    chEl('div', 'ttl', [r.title, chEl('small', null, [
+      r.type + (r.iter ? ' · ' + chSprint(r.iter) : ''),
+      r.other ? chEl('span', 'ch-oth', ['other sprint'], { title:'Requirement is in ' + r.iter }) : null,
+      chEl('span', 'ch-mob', [' · Dev ' + h2(full.dev) + ' · Test ' + h2(full.test) + (r.id ? ' · Current ' + (r.cw == null ? '—' : h2(r.cw)) : '')])
+    ])], { title:r.title }),
+    chEl('div', 'c-x', [r.state ? chBadge(stateCls(r.state), r.state) : null]),
+    chEl('div', 'who c-x', r.assignee ? [chAvatar(r.assignee), chEl('span', null, [r.assignee])] : []),
+    chNum(r.taskIds.length, 'c-x'), chNum(h2(full.dev), 'c-x'), chNum(h2(full.test), 'c-x'), chNum(h2(full.CW), 'ch-tot'),
+    chNum(!r.id ? '' : r.cw == null ? '—' : h2(r.cw), 'c-x ch-cur' + (need ? ' diff' : '')),
+    chEl('div', 'ch-act', [act])
+  ], { 'data-chact':'toggle' });
+  var th = chEl('div', 'ch-th', ['Task', '', 'Discipline', 'State', 'Sprint', 'Original', 'Remaining', 'Completed']
+    .map(function(t, i){ return chEl('div', i >= 5 ? 'num' : null, [t]); }));
+  var total = chEl('div', 'ch-tr sum', [
+    chEl('div'), chEl('div', null, ['Total · ' + x.ts.length + ' task' + (x.ts.length === 1 ? '' : 's')]),
+    chEl('div', 'c-x'), chEl('div', 'c-x'), chEl('div', 'c-x'),
+    chNum(h2(s.OE), 'c-x'), chNum(h2(s.RW), 'c-x'), chNum(h2(s.CW), 'ch-tot')
+  ]);
+  var grid = chEl('div', 'tgrid', [th].concat(x.ts.map(chRenderTask)).concat([total]));
+  var fold = chEl('div', 'fold', [chEl('div', null, [chEl('div', 'tasks', [grid])])]);
+  return chEl('div', 'req' + (open ? ' open' : ''), [row, fold], { 'data-chreq':String(r.id) });
+}
+/* --- requirement Completed Work = sum of its Dev/Test tasks --- */
+function chRound(x){ return Math.round((+x || 0) * 100) / 100; }
+function chFull(r){ return chSum(r.taskIds.map(function(id){ return CH.tasks[id]; })); }
+function chNeedsUpdate(r){ return !!r.id && r.taskIds.length > 0 && Math.abs(chRound(chFull(r).CW) - (r.cw || 0)) >= 0.005; }
+async function chUpdateReq(id, btn){
+  var r = CH.reqs[id]; if (!r || !chNeedsUpdate(r)) return;
+  var full = chFull(r), val = chRound(full.CW), cur = r.cw == null ? '—' : h2(r.cw);
+  if (!(await chConfirm(r, full, val))) return;
+  busy(btn, true, 'Saving…');
+  try {
+    var wi;
+    if (S.demo){ await new Promise(function(res){ setTimeout(res, 400); }); wi = { rev:(r.rev || 1) + 1, fields:{} }; wi.fields[F.CW] = val; }
+    else wi = await tfs(S.base + '/_apis/wit/workitems/' + id + '?api-version=3.0', { method:'PATCH', headers:hdrs('application/json-patch+json'),
+      body:JSON.stringify([{ op:'test', path:'/rev', value:r.rev }, { op:'add', path:'/fields/' + F.CW, value:val }]) });
+    r.rev = wi.rev;
+    r.cw = wi.fields && wi.fields[F.CW] != null ? +wi.fields[F.CW] || 0 : val;
+    toast('Requirement <b>#' + id + '</b> Completed Work ' + esc(cur) + ' → <b>' + h2(r.cw) + '</b>', 'ok');
+    chRender();
+  } catch(e){
+    var why = (e.status === 409 || e.status === 412 || (e.status === 400 && /rev/i.test(e.message))) ? 'the requirement was changed by someone else — press Load and try again' : e.message;
+    toast('<b>#' + id + '</b> not updated: ' + esc(why), 'bad');
+    busy(btn, false);
+  }
+}
+// custom confirm popup (own modal, same look as the Hour update dialog); resolves true on Confirm
+function chConfirm(r, full, val){
+  return new Promise(function(done){
+    var cur = r.cw == null ? '—' : h2(r.cw);
+    var line = function(label, hint, value){
+      return chEl('tr', null, [chEl('td', null, [label, hint ? chEl('span', 'hint', [' (' + hint + ')']) : null]), chEl('td', null, value)]);
+    };
+    var tasks = function(n){ return n + ' task' + (n === 1 ? '' : 's'); };
+    $('chmList').replaceChildren(chEl('div', 'chg-item', [
+      chEl('div', 't', [chEl('span', 'mono', ['#' + r.id], { style:'color:var(--brand)' }), ' ' + r.title]),
+      chEl('table', null, [chEl('tbody', null, [
+        line('Completed Work', 'requirement', [cur + ' ', chEl('span', 'arrow', ['→']), ' ', chEl('b', null, [h2(val)])]),
+        line('Development', tasks(full.devN), [h2(full.dev)]),
+        line('Test', tasks(full.testN), [h2(full.test)])
+      ])])
+    ]));
+    var m = $('chModal');
+    var key = function(e){ if (e.key === 'Escape'){ e.stopPropagation(); close(false); } };
+    var close = function(ok){
+      m.classList.remove('show');
+      document.removeEventListener('keydown', key, true);
+      $('chmOk').onclick = $('chmCancel').onclick = m.onclick = null;
+      done(ok);
+    };
+    $('chmOk').onclick = function(){ close(true); };
+    $('chmCancel').onclick = function(){ close(false); };
+    m.onclick = function(e){ if (e.target === m) close(false); };
+    document.addEventListener('keydown', key, true);
+    m.classList.add('show');
+    setTimeout(function(){ $('chmOk').focus(); }, 50);
+  });
+}
+function chRenderTask(t){
+  return chEl('div', 'ch-tr', [
+    chEl('div', null, [chIdLink(t.id)]),
+    chEl('div', 'ttl', [t.title, chEl('small', null, [t.assignee,
+      chEl('span', 'ch-mob', [' · ' + t.disc + ' · ' + t.state + ' · ' + chSprint(t.iter)])])], { title:t.title }),
+    chEl('div', 'c-x', [chBadge(t.disc === 'Development' ? 'd-dev' : 'd-test', t.disc)]),
+    chEl('div', 'c-x', [chBadge(stateCls(t.state), t.state)]),
+    chEl('div', 'c-x ttl', [chSprint(t.iter), t.other ? chEl('span', 'ch-oth', ['other']) : null], { title:t.iter, style:'font-weight:500;font-size:12.5px' }),
+    chNum(h2(t.OE), 'c-x'), chNum(h2(t.RW), 'c-x'), chNum(h2(t.CW), 'ch-tot')
+  ]);
+}
+
+/* --- demo data (only for the Completed hours tab) --- */
+function chDemo(iter){
+  var S41 = 'CasepointARA\\Sprint 41', S43 = 'CasepointARA\\Sprint 43', ppl = ['Demo User', 'Teammate One', 'Teammate Two'];
+  // [id, type, title, state, iteration, owner, discipline, OE, RW, CW, parentId]
+  var rows = [
+    [900100, 'Requirement', 'ASTRA Chat — default skill parameters editable from plan', 'Active', iter, 0],
+    [900200, 'Requirement', 'FOIA document field node search keyword match', 'Active', iter, 1],
+    [900300, 'Requirement', 'DPF task template console error on open/close', 'Closed', S41, 0],
+    [900400, 'Requirement', 'Design spike for export presets', 'Active', iter, 2],
+    [900101, 'Task', 'Backend: expose default params in plan API', 'Active', iter, 0, 'Development', 30, 22, 8, 900100],
+    [900102, 'Task', 'UI: editable parameter chips in plan card', 'Closed', S41, 0, 'Development', 12, 0, 12, 900100],
+    [900103, 'Task', 'Test cases for param override', 'Active', iter, 1, 'Test', 6, 2, 4, 900100],
+    [900108, 'Task', 'Analysis & design discussion', 'Closed', S41, 0, 'Analysis', 4, 0, 4, 900100],
+    [900104, 'Task', 'Fix tree search filter on keyword', 'Active', iter, 0, 'Development', 8, 5.75, 2.25, 900200],
+    [900105, 'Task', 'QA regression on search', 'New', S43, 2, 'Test', 4, 4, 0, 900200],
+    [900106, 'Task', 'Dispose Kendo window on close', 'Closed', S41, 0, 'Development', 5, 0, 5, 900300],
+    [900107, 'Task', 'Verify fix on QA', 'Active', iter, 1, 'Test', 3, 1, 2, 900300],
+    [900401, 'Task', 'UX mockups', 'Active', iter, 2, 'User Experience', 6, 3, 3, 900400],
+    [900109, 'Task', 'Sprint ceremonies', 'Active', iter, 0, 'Development', 10, 6, 4, 0]
+  ];
+  var reqCW = { 900100:24, 900300:5 };          // requirement's own Completed Work (900200 has none yet)
+  var items = {}, rel = function(type, id){ return { rel:type, url:'https://tfs.example/_apis/wit/workItems/' + id }; };
+  rows.forEach(function(r){
+    var f = { 'System.WorkItemType':r[1], 'System.Title':r[2], 'System.State':r[3], 'System.IterationPath':r[4], 'System.AssignedTo':ppl[r[5]] };
+    if (r[1] === 'Task'){ f['Microsoft.VSTS.Common.Discipline'] = r[6]; f[F.OE] = r[7]; f[F.RW] = r[8]; f[F.CW] = r[9]; }
+    else if (reqCW[r[0]] != null) f[F.CW] = reqCW[r[0]];
+    items[r[0]] = { id:r[0], rev:3, fields:f, relations:r[10] ? [rel(CH_PARENT, r[10])] : [] };
+  });
+  rows.forEach(function(r){ if (r[10]) items[r[10]].relations.push(rel(CH_CHILD, r[0])); });
+  var inSprint = function(type){ return rows.filter(function(r){ return r[1] === type && chUnder(r[4], iter); }).map(function(r){ return r[0]; }); };
+  var taskIds = inSprint('Task');
+  return chBuild(items, chReqSet(items, inSprint('Requirement'), taskIds), taskIds, iter);
+}
+
+/* --- events (Completed hours tab only) --- */
+$('mainTabs').addEventListener('click', function(e){ var b = e.target.closest('button[data-tab]'); if (b) chSetTab(b.dataset.tab); });
+// refresh the tab when a connect / demo finishes while it is open (observes only, changes nothing)
+new MutationObserver(function(){ if (CH.tab === 'ch') chEnter(); }).observe($('iterSel'), { childList:true });
+new MutationObserver(function(){ if (CH.tab === 'ch') chEnter(); }).observe($('filterCard'), { attributes:true, attributeFilter:['class'] });
+$('chProj').onchange = function(){ if (!S.demo) chLoadTeams().catch(function(e){ showErr('chErr', e.message); }); };
+$('chTeam').onchange = function(){ if (!S.demo) chLoadIters().catch(function(e){ showErr('chErr', e.message); }); };
+$('chLoadBtn').onclick = chLoad;
+$('chDisc').onchange = chRender;
+$('chOwner').onchange = chRender;
+var chST; $('chSearch').addEventListener('input', function(){ clearTimeout(chST); chST = setTimeout(chRender, 180); });
+$('chGrid').addEventListener('click', function(e){
+  var upd = e.target.closest('[data-chupd]');
+  if (upd){ chUpdateReq(+upd.dataset.chupd, upd); return; }
+  if (e.target.closest('[data-stop]')) return;
+  var el = e.target.closest('[data-chact="toggle"]'); if (!el) return;
+  var r = el.closest('.req'), k = r.dataset.chreq;
+  r.classList.toggle('open'); r.classList.contains('open') ? CH.open.add(k) : CH.open.delete(k);
+});
+$('chExpand').onclick = function(){ document.querySelectorAll('#chGrid .req').forEach(function(r){ r.classList.add('open'); CH.open.add(r.dataset.chreq); }); };
+$('chOnlyDiff').onchange = chRender;
+$('chCollapse').onclick = function(){ document.querySelectorAll('#chGrid .req').forEach(function(r){ r.classList.remove('open'); }); CH.open.clear(); };
+
+/* ============ settings drawer ============ */
+function drawer(open){
+  document.body.classList.toggle('drawer-on', open);
+  $('settingsDrawer').inert = !open;
+  $('settingsBtn').setAttribute('aria-expanded', open);
+  if (open) setTimeout(function(){ (pat() ? $('connectBtn') : $('patInput')).focus(); }, 120);
+}
+$('settingsBtn').onclick = function(){ drawer(!document.body.classList.contains('drawer-on')); };
+$('drawerClose').onclick = function(){ drawer(false); };
+$('drawerBg').onclick = function(){ drawer(false); };
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && document.body.classList.contains('drawer-on') && !document.querySelector('.modal.show')) drawer(false);
+});
+// close once connected (or demo started); reopen if a connection error is shown
+new MutationObserver(function(){ if ($('connDot').classList.contains('ok')) drawer(false); })
+  .observe($('connDot'), { attributes:true, attributeFilter:['class'] });
+new MutationObserver(function(){ if ($('connErr').classList.contains('show')) drawer(true); })
+  .observe($('connErr'), { attributes:true, attributeFilter:['class'] });
+// first visit (no saved PAT): open settings so the user can connect
+if (!lsGet('pat', '')) drawer(true);
 
 /* ============ boot ============ */
 (function boot(){
