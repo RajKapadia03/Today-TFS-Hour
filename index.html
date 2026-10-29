@@ -493,7 +493,7 @@ body:not(.ch-on) #chView{display:none}
         <div class="field"><label for="chSearch">Search</label><input class="inp" id="chSearch" placeholder="Requirement / task ID or title…"></div>
         <button class="btn primary" id="chLoadBtn">Load</button>
       </div>
-      <div class="ch-note">Sums <b>Completed Work</b> of every <b>Development</b> and <b>Test</b> task under each requirement in the sprint, including tasks that are in other sprints or already closed. A requirement from another sprint is included when one of its tasks is in this sprint. <b>Update</b> writes the tasks' total into the requirement's own Completed Work; it shows only when the two differ.</div>
+      <div class="ch-note">Sums <b>Completed Work</b> of every <b>Development</b> and <b>Test</b> task under each requirement in the sprint, including tasks that are in other sprints or already closed. A requirement from another sprint is included when one of its tasks is in this sprint. <b>Update</b> writes the tasks' total into the requirement's <b>Work Completed</b> field; it shows only when the two differ.</div>
       <div class="err" id="chErr" style="margin:0 18px 14px"></div>
     </section>
 
@@ -519,8 +519,8 @@ body:not(.ch-on) #chView{display:none}
     <!-- confirm popup for requirement Completed Work update -->
     <div class="modal" id="chModal" role="dialog" aria-modal="true" aria-labelledby="chmTitle">
       <div class="card mbox">
-        <h3 id="chmTitle">Update requirement Completed Work</h3>
-        <div class="hint">Only the requirement's Completed Work is changed. Title, state, assignment and other fields are not touched.</div>
+        <h3 id="chmTitle">Update requirement Work Completed</h3>
+        <div class="hint">Only the requirement's Work Completed field is changed (set to the sum of its tasks' Completed Work). Title, state, assignment and other fields are not touched.</div>
         <div class="chg-list" id="chmList"></div>
         <div class="row" style="justify-content:flex-end">
           <button class="btn ghost" id="chmCancel">Cancel</button>
@@ -1357,7 +1357,17 @@ function demoApply(t, a, d){
 /* ============ Completed hours tab ============
    Separate view with its own state (CH), filters, loaders and rendering.
    It only reads the shared connection/helpers; the Hour update flow above is not changed. */
-var CH = { tab:'desk', srcTok:-1, reqs:{}, tasks:{}, noParent:[], iterPath:'', open:new Set() };
+var CH = { tab:'desk', srcTok:-1, reqs:{}, tasks:{}, noParent:[], iterPath:'', open:new Set(), wcField:undefined };
+// requirement-level "Work Completed" field (receives the sum of the tasks' Completed Work); found by display name
+var CH_WC_DEMO = 'Casepoint.TFS.CustomFields.WorkCompleted';
+async function chWcField(){
+  if (CH.wcField !== undefined) return CH.wcField;
+  var d = await tfs(S.base + '/_apis/wit/fields?api-version=3.0');
+  var hit = (d.value || []).find(function(x){ return /^work\s*completed$/i.test(String(x.name || '').trim()); }) ||
+            (d.value || []).find(function(x){ return /\.WorkCompleted$/i.test(String(x.referenceName || '')); });
+  CH.wcField = hit ? hit.referenceName : null;
+  return CH.wcField;
+}
 var CH_PARENT = 'System.LinkTypes.Hierarchy-Reverse', CH_CHILD = 'System.LinkTypes.Hierarchy-Forward';
 
 function chLinks(w, rel){
@@ -1399,7 +1409,7 @@ function chBuild(items, reqSet, taskIds, iter){
     var f = w.fields || {};
     var r = { id:id, title:f['System.Title'] || '', type:f['System.WorkItemType'] || '', state:f['System.State'] || '',
       assignee:nameOf(f['System.AssignedTo']), iter:f['System.IterationPath'] || '', taskIds:[],
-      rev:w.rev, cw:f[F.CW] != null ? +f[F.CW] || 0 : null };
+      rev:w.rev, cw:CH.wcField && f[CH.wcField] != null ? +f[CH.wcField] || 0 : null };
     r.other = !chUnder(r.iter, iter);
     chLinks(w, CH_CHILD).forEach(function(k){ var t = chMkTask(items[k], id, iter); if (t){ tasks[k] = t; r.taskIds.push(k); } });
     reqs[id] = r;
@@ -1466,7 +1476,7 @@ function chEnter(){
   if (!on || CH.srcTok === S.tok || !$('iterSel').value) return;
   CH.srcTok = S.tok;
   chCopySel('projSel', 'chProj'); chCopySel('teamSel', 'chTeam'); chCopySel('iterSel', 'chIter');
-  CH.reqs = {}; CH.tasks = {}; CH.noParent = []; CH.open = new Set();
+  CH.reqs = {}; CH.tasks = {}; CH.noParent = []; CH.open = new Set(); CH.wcField = undefined;
   showErr('chErr', '');
   fillSel($('chOwner'), [], '', 'All task owners');
   $('chKpis').classList.add('hidden'); $('chCard').classList.add('hidden');
@@ -1499,7 +1509,9 @@ async function chLoad(){
   $('chCard').classList.remove('hidden');
   $('chGrid').replaceChildren(chEl('div', 'skel'), chEl('div', 'skel'), chEl('div', 'skel'), chEl('div', 'skel'));
   try {
+    if (S.demo) CH.wcField = CH_WC_DEMO; else await chWcField();
     var d = S.demo ? chDemo(iter) : await chFetch($('chProj').value, $('chTeam').value, iter);
+    if (!CH.wcField) showErr('chErr', 'The requirement field "Work Completed" was not found in this TFS collection, so Update is turned off. Hours are still shown.');
     CH.reqs = d.reqs; CH.tasks = d.tasks; CH.noParent = d.noParent; CH.iterPath = iter; CH.open = new Set();
     var it = $('chIter').selectedOptions[0];
     $('chTag').textContent = (it ? it.textContent.replace('● current', '').trim() : chSprint(iter)) + ' · ' + $('chTeam').value;
@@ -1573,23 +1585,23 @@ function chRender(){
       chEl('div', 'hint', ['Try another sprint, discipline, owner, or clear the search.'])]));
     return;
   }
-  var head = chEl('div', 'ch-head', ['', 'ID', 'Requirement', 'State', 'Assigned', 'Tasks', 'Dev', 'Test', 'Tasks CW', 'Current CW', '']
-    .map(function(t, i){ return chEl('div', i >= 5 ? 'num' : null, [t], i === 8 ? { title:'Sum of Completed Work of all Development + Test tasks' } : i === 9 ? { title:'Completed Work saved on the requirement now' } : null); }));
+  var head = chEl('div', 'ch-head', ['', 'ID', 'Requirement', 'State', 'Assigned', 'Tasks', 'Dev', 'Test', 'Tasks total', 'Work Completed', '']
+    .map(function(t, i){ return chEl('div', i >= 5 ? 'num' : null, [t], i === 8 ? { title:'Sum of Completed Work of all Development + Test tasks' } : i === 9 ? { title:'Work Completed saved on the requirement now' } : null); }));
   $('chGrid').replaceChildren.apply($('chGrid'), [head].concat(v.rows.map(chRenderReq)));
 }
 function chRenderReq(x){
   // row numbers are the whole requirement (all Dev/Test tasks); the task list below follows the filters
   var r = x.r, s = chSum(x.ts), full = chFull(r), open = CH.open.has(String(r.id)), need = chNeedsUpdate(r);
-  var act = !r.id ? null
-    : need ? chEl('button', 'btn sm green', ['Update ' + h2(chRound(full.CW))], { 'data-chupd':String(r.id), title:'Set requirement Completed Work to ' + h2(chRound(full.CW)) })
-    : chEl('span', 'ch-ok', ['✓ matches'], { title:'Requirement Completed Work equals the tasks total' });
+  var act = !r.id || !CH.wcField ? null
+    : need ? chEl('button', 'btn sm green', ['Update ' + h2(chRound(full.CW))], { 'data-chupd':String(r.id), title:'Set requirement Work Completed to ' + h2(chRound(full.CW)) })
+    : chEl('span', 'ch-ok', ['✓ matches'], { title:'Requirement Work Completed equals the tasks total' });
   var row = chEl('div', 'ch-row', [
     chEl('div', null, [chEl('span', 'chev', ['›'])]),
     chEl('div', 'c-id', [r.id ? chIdLink(r.id, true) : null]),
     chEl('div', 'ttl', [r.title, chEl('small', null, [
       r.type + (r.iter ? ' · ' + chSprint(r.iter) : ''),
       r.other ? chEl('span', 'ch-oth', ['other sprint'], { title:'Requirement is in ' + r.iter }) : null,
-      chEl('span', 'ch-mob', [' · Dev ' + h2(full.dev) + ' · Test ' + h2(full.test) + (r.id ? ' · Current ' + (r.cw == null ? '—' : h2(r.cw)) : '')])
+      chEl('span', 'ch-mob', [' · Dev ' + h2(full.dev) + ' · Test ' + h2(full.test) + (r.id ? ' · Work Completed ' + (r.cw == null ? '—' : h2(r.cw)) : '')])
     ])], { title:r.title }),
     chEl('div', 'c-x', [r.state ? chBadge(stateCls(r.state), r.state) : null]),
     chEl('div', 'who c-x', r.assignee ? [chAvatar(r.assignee), chEl('span', null, [r.assignee])] : []),
@@ -1611,7 +1623,7 @@ function chRenderReq(x){
 /* --- requirement Completed Work = sum of its Dev/Test tasks --- */
 function chRound(x){ return Math.round((+x || 0) * 100) / 100; }
 function chFull(r){ return chSum(r.taskIds.map(function(id){ return CH.tasks[id]; })); }
-function chNeedsUpdate(r){ return !!r.id && r.taskIds.length > 0 && Math.abs(chRound(chFull(r).CW) - (r.cw || 0)) >= 0.005; }
+function chNeedsUpdate(r){ return !!CH.wcField && !!r.id && r.taskIds.length > 0 && Math.abs(chRound(chFull(r).CW) - (r.cw || 0)) >= 0.005; }
 async function chUpdateReq(id, btn){
   var r = CH.reqs[id]; if (!r || !chNeedsUpdate(r)) return;
   var full = chFull(r), val = chRound(full.CW), cur = r.cw == null ? '—' : h2(r.cw);
@@ -1619,12 +1631,13 @@ async function chUpdateReq(id, btn){
   busy(btn, true, 'Saving…');
   try {
     var wi;
-    if (S.demo){ await new Promise(function(res){ setTimeout(res, 400); }); wi = { rev:(r.rev || 1) + 1, fields:{} }; wi.fields[F.CW] = val; }
+    var wc = CH.wcField;
+    if (S.demo){ await new Promise(function(res){ setTimeout(res, 400); }); wi = { rev:(r.rev || 1) + 1, fields:{} }; wi.fields[wc] = val; }
     else wi = await tfs(S.base + '/_apis/wit/workitems/' + id + '?api-version=3.0', { method:'PATCH', headers:hdrs('application/json-patch+json'),
-      body:JSON.stringify([{ op:'test', path:'/rev', value:r.rev }, { op:'add', path:'/fields/' + F.CW, value:val }]) });
+      body:JSON.stringify([{ op:'test', path:'/rev', value:r.rev }, { op:'add', path:'/fields/' + wc, value:val }]) });
     r.rev = wi.rev;
-    r.cw = wi.fields && wi.fields[F.CW] != null ? +wi.fields[F.CW] || 0 : val;
-    toast('Requirement <b>#' + id + '</b> Completed Work ' + esc(cur) + ' → <b>' + h2(r.cw) + '</b>', 'ok');
+    r.cw = wi.fields && wi.fields[wc] != null ? +wi.fields[wc] || 0 : val;
+    toast('Requirement <b>#' + id + '</b> Work Completed ' + esc(cur) + ' → <b>' + h2(r.cw) + '</b>', 'ok');
     chRender();
   } catch(e){
     var why = (e.status === 409 || e.status === 412 || (e.status === 400 && /rev/i.test(e.message))) ? 'the requirement was changed by someone else — press Load and try again' : e.message;
@@ -1643,7 +1656,7 @@ function chConfirm(r, full, val){
     $('chmList').replaceChildren(chEl('div', 'chg-item', [
       chEl('div', 't', [chEl('span', 'mono', ['#' + r.id], { style:'color:var(--brand)' }), ' ' + r.title]),
       chEl('table', null, [chEl('tbody', null, [
-        line('Completed Work', 'requirement', [cur + ' ', chEl('span', 'arrow', ['→']), ' ', chEl('b', null, [h2(val)])]),
+        line('Work Completed', 'requirement', [cur + ' ', chEl('span', 'arrow', ['→']), ' ', chEl('b', null, [h2(val)])]),
         line('Development', tasks(full.devN), [h2(full.dev)]),
         line('Test', tasks(full.testN), [h2(full.test)])
       ])])
@@ -1696,12 +1709,12 @@ function chDemo(iter){
     [900401, 'Task', 'UX mockups', 'Active', iter, 2, 'User Experience', 6, 3, 3, 900400],
     [900109, 'Task', 'Sprint ceremonies', 'Active', iter, 0, 'Development', 10, 6, 4, 0]
   ];
-  var reqCW = { 900100:24, 900300:5 };          // requirement's own Completed Work (900200 has none yet)
+  var reqCW = { 900100:24, 900300:5 };          // requirement's Work Completed (900200 has none yet)
   var items = {}, rel = function(type, id){ return { rel:type, url:'https://tfs.example/_apis/wit/workItems/' + id }; };
   rows.forEach(function(r){
     var f = { 'System.WorkItemType':r[1], 'System.Title':r[2], 'System.State':r[3], 'System.IterationPath':r[4], 'System.AssignedTo':ppl[r[5]] };
     if (r[1] === 'Task'){ f['Microsoft.VSTS.Common.Discipline'] = r[6]; f[F.OE] = r[7]; f[F.RW] = r[8]; f[F.CW] = r[9]; }
-    else if (reqCW[r[0]] != null) f[F.CW] = reqCW[r[0]];
+    else if (reqCW[r[0]] != null) f[CH_WC_DEMO] = reqCW[r[0]];
     items[r[0]] = { id:r[0], rev:3, fields:f, relations:r[10] ? [rel(CH_PARENT, r[10])] : [] };
   });
   rows.forEach(function(r){ if (r[10]) items[r[10]].relations.push(rel(CH_CHILD, r[0])); });
